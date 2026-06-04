@@ -1,0 +1,129 @@
+/* HR Module Shared Styles — mirrors Finance.css design language */
+
+.hr-page { animation: fadeInUp 0.35s ease-out; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Sub-nav (reuses .finance-subnav pattern) */
+.hr-subnav {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--surface-white);
+  border-radius: 14px;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+.hr-subnav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.hr-subnav-link:hover { background: var(--bg-grey); color: var(--primary-green); }
+.hr-subnav-link.active { background: #ecfdf5; color: var(--primary-green); font-weight: 600; }
+
+/* Employee avatar circle */
+.emp-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: #ecfdf5;
+  color: var(--primary-green);
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #d1fae5;
+  flex-shrink: 0;
+}
+
+/* Rating stars */
+.star-rating { color: #f59e0b; letter-spacing: 2px; font-size: 1rem; }
+.star-empty  { color: #d1d5db; }
+
+/* HR KPI — reuse .kpi-card from Finance.css via global cascade */
+.hr-card {
+  background: var(--surface-white);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.hr-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.07); }
+
+/* Table card */
+.hr-table-card {
+  background: var(--surface-white);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.hr-table { margin-bottom: 0; font-size: 0.9rem; }
+.hr-table thead th {
+  background: #f9fafb;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  border-top: none;
+}
+.hr-table tbody tr { border-bottom: 1px solid #f3f4f6; transition: background 0.15s; }
+.hr-table tbody tr:hover { background: #f9fafb; }
+.hr-table tbody td { padding: 0.9rem 1.25rem; vertical-align: middle; border: none; }
+
+/* Badges */
+.hr-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0.3em 0.75em; border-radius: 6px;
+  font-size: 0.78rem; font-weight: 600;
+}
+.hr-badge.active, .hr-badge.present, .hr-badge.approved, .hr-badge.paid {
+  background: #ecfdf5; color: var(--primary-green);
+}
+.hr-badge.pending, .hr-badge.processing, .hr-badge.half-day {
+  background: #fffbeb; color: #d97706;
+}
+.hr-badge.inactive, .hr-badge.absent, .hr-badge.rejected, .hr-badge.overdue {
+  background: #fef2f2; color: #ef4444;
+}
+.hr-badge.on-leave, .hr-badge.late {
+  background: #eff6ff; color: #3b82f6;
+}
+.hr-badge.contract { background: #f3e8ff; color: #7c3aed; }
+.hr-badge.part-time { background: #fff7ed; color: #f97316; }
+
+/* Buttons */
+.btn-hr-primary {
+  background-color: var(--primary-green); color: white;
+  border: none; border-radius: 10px; padding: 0.55rem 1.25rem;
+  font-weight: 600; font-size: 0.875rem; transition: all 0.2s ease;
+  cursor: pointer;
+}
+.btn-hr-primary:hover {
+  background-color: var(--primary-green-hover); color: white;
+  transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.25);
+}
+
+/* Modal */
+.hr-modal .modal-content {
+  border: none; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+}
+
+@media (max-width: 768px) {
+  .hr-subnav { gap: 0.1rem; }
+  .hr-subnav-link { padding: 0.4rem 0.7rem; font-size: 0.8rem; }
+}
