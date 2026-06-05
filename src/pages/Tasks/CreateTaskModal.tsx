@@ -9,6 +9,7 @@ interface CreateTaskModalProps {
 const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, onCreated }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [remarks, setRemarks] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [priority, setPriority] = useState('Medium');
   const [dueDate, setDueDate] = useState('');
@@ -35,6 +36,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, onCreated })
       await api.post('/tasks/', {
         title,
         description,
+        remarks,
         assigned_to: assignedTo,
         priority,
         due_date: new Date(dueDate).toISOString()
@@ -65,6 +67,10 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, onCreated })
               <div className="mb-3">
                 <label className="form-label text-muted small fw-semibold">Description</label>
                 <textarea className="form-control bg-light" rows={3} value={description} onChange={(e)=>setDescription(e.target.value)}></textarea>
+              </div>
+              <div className="mb-3">
+                <label className="form-label text-muted small fw-semibold">Remarks / Notes</label>
+                <textarea className="form-control bg-light" rows={2} value={remarks} onChange={(e)=>setRemarks(e.target.value)} placeholder="Special delivery notes, constraints, or comments..."></textarea>
               </div>
               <div className="row mb-3">
                 <div className="col-6">
