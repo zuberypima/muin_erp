@@ -1,11 +1,21 @@
-import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './SidebarMenu.css';
 
 const SidebarMenu: React.FC = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isTasksRoute = location.pathname.startsWith('/tasks');
+  const [tasksDropdownOpen, setTasksDropdownOpen] = useState(isTasksRoute);
+
+  useEffect(() => {
+    if (isTasksRoute) {
+      setTasksDropdownOpen(true);
+    }
+  }, [location.pathname, isTasksRoute]);
 
   const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -33,9 +43,37 @@ const SidebarMenu: React.FC = () => {
 
         
         <li className="nav-item">
-          <NavLink to="/tasks" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
-            <i className="fas fa-tasks nav-icon"></i> Office Tasks
-          </NavLink>
+          <div
+            className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isTasksRoute ? 'active' : ''}`}
+            style={{ cursor: 'pointer' }}
+            onClick={() => setTasksDropdownOpen(!tasksDropdownOpen)}
+          >
+            <div className="d-flex align-items-center">
+              <i className="fas fa-tasks nav-icon"></i>
+              <span>Office Tasks</span>
+            </div>
+            <i className={`fas fa-chevron-${tasksDropdownOpen ? 'down' : 'right'} ms-auto`} style={{ fontSize: '0.8rem' }}></i>
+          </div>
+          
+          {tasksDropdownOpen && (
+            <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
+              <li className="nav-item">
+                <NavLink to="/tasks" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                  <i className="fas fa-clipboard-list nav-icon" style={{ fontSize: '0.9rem' }}></i> Board
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink to="/tasks/approvals" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                  <i className="fas fa-check-circle nav-icon" style={{ color: '#7c3aed', fontSize: '0.9rem' }}></i> Approvals
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink to="/tasks/assist" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
+                  <i className="fas fa-life-ring nav-icon" style={{ color: '#ea580c', fontSize: '0.9rem' }}></i> Assistance
+                </NavLink>
+              </li>
+            </ul>
+          )}
         </li>
         <li className="nav-item">
           <NavLink to="/erp-users" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>

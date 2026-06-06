@@ -6,7 +6,8 @@ import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import TaskBoard from './pages/Tasks/TaskBoard';
-import ERPUsers from './pages/ERPUsers';
+import RequestsInbox from './pages/Tasks/RequestsInbox';
+import ERPUsers from './pages/ERPUsers.tsx';
 import FinanceLayout from './pages/Finance/FinanceLayout';
 import FinanceDashboard from './pages/Finance/FinanceDashboard';
 import Income from './pages/Finance/Income';
@@ -34,6 +35,8 @@ const App: React.FC = () => {
               <Route index element={<Navigate to="/services" replace />} />
               <Route path="services" element={<ServicePage />} />
               <Route path="tasks" element={<TaskBoard />} />
+              <Route path="tasks/approvals" element={<RequestsInbox mode="approval" />} />
+              <Route path="tasks/assist" element={<RequestsInbox mode="assist" />} />
               <Route path="erp-users" element={<ERPUsers />} />
               
               {/* Finance Module */}

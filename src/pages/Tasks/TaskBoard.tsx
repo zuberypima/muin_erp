@@ -3,12 +3,7 @@ import api from '../../api/axiosConfig';
 import CreateTaskModal from './CreateTaskModal.tsx';
 import './Tasks.css';
 
-interface UserDetail {
-  id: number;
-  uuid: string;
-  username: string;
-  email: string;
-}
+interface UserDetail { id: number; uuid: string; username: string; email: string; }
 
 interface Task {
   id: string;
@@ -19,254 +14,183 @@ interface Task {
   assigned_to: string;
   assigned_to_detail?: UserDetail;
   assigned_by_detail?: UserDetail;
+  collaborators?: string[];
+  collaborators_detail?: UserDetail[];
   status: string;
   priority: string;
   due_date: string;
   created_at: string;
 }
 
+const ALL_STATUSES = ['Pending', 'In-Progress', 'Awaiting-Approval', 'Assist-Requested', 'Completed'];
+
 const TaskBoard: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'my' | 'assigned'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'my' | 'assigned' | 'collaborating'>('all');
   const [showModal, setShowModal] = useState(false);
-
-  // Filters & Sorting state
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortBy, setSortBy] = useState('due_date_asc');
-
-  // Inline remarks editor state
   const [editingRemarksTaskId, setEditingRemarksTaskId] = useState<string | null>(null);
   const [tempRemarks, setTempRemarks] = useState('');
-
-  const handleSaveRemarks = async (id: string) => {
-    try {
-      await api.patch(`/tasks/${id}/`, { remarks: tempRemarks });
-      setEditingRemarksTaskId(null);
-      fetchTasks();
-    } catch (error) {
-      console.error("Failed to update remarks", error);
-    }
-  };
+  const [allUsers, setAllUsers] = useState<UserDetail[]>([]);
+  const [actionModal, setActionModal] = useState<{ task: Task; type: 'reassign' | 'collaborate' | 'request' } | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [requestType, setRequestType] = useState<'approval' | 'assist'>('approval');
+  const [requestNote, setRequestNote] = useState('');
 
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      let endpoint = '/tasks/';
-      if (activeTab === 'my') endpoint = '/tasks/my-tasks/';
-      if (activeTab === 'assigned') endpoint = '/tasks/assigned-by-me/';
-      
-      const res = await api.get(endpoint);
+      let ep = '/tasks/';
+      if (activeTab === 'my') ep = '/tasks/my-tasks/';
+      if (activeTab === 'assigned') ep = '/tasks/assigned-by-me/';
+      if (activeTab === 'collaborating') ep = '/tasks/collaborating/';
+      const res = await api.get(ep);
       setTasks(res.data);
-    } catch (error) {
-      console.error("Failed to fetch tasks", error);
-    } finally {
-      setLoading(false);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchTasks(); }, [activeTab]);
+  useEffect(() => { api.get('/users/').then(r => setAllUsers(r.data)).catch(() => {}); }, []);
+
+  const updateStatus = async (id: string, s: string) => {
+    await api.patch(`/tasks/${id}/status/`, { status: s }); fetchTasks();
+  };
+  const saveRemarks = async (id: string) => {
+    await api.patch(`/tasks/${id}/`, { remarks: tempRemarks });
+    setEditingRemarksTaskId(null); fetchTasks();
+  };
+  const removeCollaborator = async (taskId: string, userId: string) => {
+    await api.post(`/tasks/${taskId}/remove-collaborator/`, { user_id: userId }); fetchTasks();
+  };
+  const submitAction = async () => {
+    if (!actionModal) return;
+    const { task, type } = actionModal;
+    if (type === 'reassign') {
+      await api.patch(`/tasks/${task.id}/reassign/`, { user_id: selectedUserId });
+    } else if (type === 'collaborate') {
+      await api.post(`/tasks/${task.id}/add-collaborator/`, { user_id: selectedUserId });
+    } else if (type === 'request') {
+      await api.patch(`/tasks/${task.id}/request-action/`, { action_type: requestType, remarks: requestNote });
     }
+    setActionModal(null); setSelectedUserId(''); setRequestNote(''); fetchTasks();
   };
 
-  useEffect(() => {
-    fetchTasks();
-  }, [activeTab]);
-
-  const updateTaskStatus = async (id: string, newStatus: string) => {
-    try {
-      await api.patch(`/tasks/${id}/status/`, { status: newStatus });
-      fetchTasks();
-    } catch (error) {
-      console.error("Failed to update status", error);
-    }
+  const getPriorityClass = (p: string) => ({ 'High': 'bg-danger text-white', 'Medium': 'bg-warning text-dark', 'Low': 'bg-info text-dark' }[p] || 'bg-secondary text-white');
+  const getStatusStyle = (s: string) => {
+    if (s === 'Completed') return { backgroundColor: '#dcfce7', color: '#15803d', borderColor: '#bbf7d0', borderWidth: '1px' };
+    if (s === 'In-Progress') return { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#bfdbfe', borderWidth: '1px' };
+    if (s === 'Awaiting-Approval') return { backgroundColor: '#f3e8ff', color: '#7c3aed', borderColor: '#e9d5ff', borderWidth: '1px' };
+    if (s === 'Assist-Requested') return { backgroundColor: '#ffe4e6', color: '#e11d48', borderColor: '#fecdd3', borderWidth: '1px' };
+    return { backgroundColor: '#fef9c3', color: '#a16207', borderColor: '#fef08a', borderWidth: '1px' }; // Pending
   };
+  const isOverdue = (t: Task) => t.status !== 'Completed' && t.due_date && new Date(t.due_date) < new Date();
+  const getInitials = (name?: string) => name ? name.slice(0, 2).toUpperCase() : 'U';
 
-  const deleteTask = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this task?")) return;
-    try {
-      await api.delete(`/tasks/${id}/`);
-      fetchTasks();
-    } catch (error) {
-      console.error("Failed to delete task", error);
-      alert("Failed to delete task. Make sure you have permission.");
-    }
-  };
-
-  const getPriorityBadgeClass = (priority: string) => {
-    switch(priority?.toLowerCase()) {
-      case 'high': return 'bg-danger text-white';
-      case 'medium': return 'bg-warning text-dark';
-      case 'low': return 'bg-info text-dark';
-      default: return 'bg-secondary text-white';
-    }
-  };
-
-  // Helper to check if task is overdue
-  const isOverdue = (task: Task) => {
-    if (task.status === 'Completed') return false;
-    if (!task.due_date) return false;
-    return new Date(task.due_date) < new Date();
-  };
-
-  // Calculate stats dynamically from fetched tasks
   const stats = {
     total: tasks.length,
     completed: tasks.filter(t => t.status === 'Completed').length,
-    inProgress: tasks.filter(t => t.status === 'In-Progress').length,
-    pending: tasks.filter(t => t.status === 'Pending').length,
+    active: tasks.filter(t => ['In-Progress', 'Pending'].includes(t.status)).length,
     overdue: tasks.filter(isOverdue).length,
+    awaiting: tasks.filter(t => ['Awaiting-Approval', 'Assist-Requested'].includes(t.status)).length,
   };
+  const pct = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
-  const completionPercentage = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
-
-  // Filter and Sort implementation
-  const filteredTasks = tasks
-    .filter(task => {
-      const matchSearch = 
-        task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (task.assigned_to_detail?.username && task.assigned_to_detail.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (task.ticket_number && `tsk-${task.ticket_number}`.includes(searchTerm.toLowerCase())) ||
-        (task.ticket_number && `#tsk-${task.ticket_number}`.includes(searchTerm.toLowerCase())) ||
-        (task.ticket_number && String(task.ticket_number).includes(searchTerm.toLowerCase()));
-      
-      const matchPriority = priorityFilter === 'All' || task.priority === priorityFilter;
-      const matchStatus = statusFilter === 'All' || task.status === statusFilter;
-
-      return matchSearch && matchPriority && matchStatus;
-    })
+  const filtered = tasks
+    .filter(t =>
+      (t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+       (t.assigned_to_detail?.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+       String(t.ticket_number || '').includes(searchTerm)) &&
+      (priorityFilter === 'All' || t.priority === priorityFilter) &&
+      (statusFilter === 'All' || t.status === statusFilter)
+    )
     .sort((a, b) => {
-      if (sortBy === 'due_date_asc') {
-        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
-      }
-      if (sortBy === 'due_date_desc') {
-        return new Date(b.due_date).getTime() - new Date(a.due_date).getTime();
-      }
-      if (sortBy === 'created_newest') {
-        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
-      }
-      if (sortBy === 'priority_high') {
-        const weight: { [key: string]: number } = { 'High': 3, 'Medium': 2, 'Low': 1 };
-        return (weight[b.priority] || 0) - (weight[a.priority] || 0);
-      }
+      if (sortBy === 'due_date_asc') return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+      if (sortBy === 'due_date_desc') return new Date(b.due_date).getTime() - new Date(a.due_date).getTime();
+      if (sortBy === 'created_newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortBy === 'priority_high') return ({ High: 3, Medium: 2, Low: 1 }[b.priority] || 0) - ({ High: 3, Medium: 2, Low: 1 }[a.priority] || 0);
       return 0;
     });
 
-  // Get Initials for Avatar
-  const getInitials = (name?: string) => {
-    if (!name) return 'U';
-    return name.slice(0, 2).toUpperCase();
-  };
+  const tabs: { key: typeof activeTab; label: string }[] = [
+    { key: 'all', label: 'All Tasks' },
+    { key: 'my', label: 'My Tasks' },
+    { key: 'assigned', label: 'Assigned By Me' },
+    { key: 'collaborating', label: '👥 Collaborating' },
+  ];
 
   return (
     <div className="container-fluid py-2 fade-in">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-3">
         <div>
-          <h2 className="fw-bold text-dark mb-1">Office Tasks</h2>
-          <p className="text-muted mb-0">Collaborate, allocate tasks, and analyze task completion rates.</p>
+          <h4 className="fw-bold text-dark mb-1">Office Tasks</h4>
+          <p className="text-muted mb-0 small" style={{ fontSize: '0.82rem' }}>
+            Collaborative task management with handoffs, approvals and assistance requests.
+          </p>
         </div>
-        <button className="btn text-white fw-bold px-4 py-2 shadow-sm" style={{ backgroundColor: '#10b981', borderRadius: '8px' }} onClick={() => setShowModal(true)}>
-          <i className="fas fa-plus me-2"></i> New Task
+        <button className="btn text-white fw-bold px-3 py-1.5 shadow-sm" style={{ backgroundColor: '#10b981', borderRadius: '6px', fontSize: '0.82rem' }} onClick={() => setShowModal(true)}>
+          <i className="fas fa-plus me-1.5"></i> New Task
         </button>
       </div>
 
-      {/* Analytics KPI Row */}
-      <div className="row g-3 mb-4">
-        <div className="col-md-3">
-          <div className="task-kpi-card d-flex align-items-center justify-content-between">
-            <div>
-              <div className="text-muted small fw-semibold">Total Tasks</div>
-              <div className="fs-3 fw-bold text-dark mt-1">{stats.total}</div>
-            </div>
-            <div className="fs-2 text-primary-green opacity-75">
-              <i className="fas fa-clipboard-list"></i>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="task-kpi-card">
-            <div className="d-flex align-items-center justify-content-between mb-2">
+      {/* KPI Row */}
+      <div className="row g-2 mb-3">
+        {[
+          { label: 'Total Tasks', value: stats.total, icon: 'fa-clipboard-list', color: '#10b981' },
+          { label: `Completed (${pct}%)`, value: stats.completed, icon: 'fa-check-circle', color: '#22c55e' },
+          { label: 'Active / Pending', value: stats.active, icon: 'fa-spinner', color: '#f59e0b' },
+          { label: 'Overdue', value: stats.overdue, icon: 'fa-exclamation-circle', color: '#ef4444' },
+          { label: 'Needs Attention', value: stats.awaiting, icon: 'fa-bell', color: '#7c3aed' },
+        ].map(kpi => (
+          <div className="col" key={kpi.label}>
+            <div className="task-kpi-card d-flex align-items-center justify-content-between">
               <div>
-                <div className="text-muted small fw-semibold">Completed</div>
-                <div className="fs-3 fw-bold text-success mt-1">{stats.completed}</div>
+                <div className="text-muted fw-semibold" style={{ fontSize: '0.7rem' }}>{kpi.label}</div>
+                <div className="fs-5 fw-bold text-dark mt-0">{kpi.value}</div>
               </div>
-              <div className="fs-4 text-success font-weight-bold">{completionPercentage}%</div>
-            </div>
-            <div className="task-progress-bar">
-              <div className="task-progress-fill bg-success" style={{ width: `${completionPercentage}%` }}></div>
+              <i className={`fas ${kpi.icon} fa-lg`} style={{ color: kpi.color, opacity: 0.7 }}></i>
             </div>
           </div>
-        </div>
-        <div className="col-md-3">
-          <div className="task-kpi-card d-flex align-items-center justify-content-between">
-            <div>
-              <div className="text-muted small fw-semibold">In Progress / Pending</div>
-              <div className="fs-3 fw-bold text-warning mt-1">{stats.inProgress + stats.pending}</div>
-            </div>
-            <div className="fs-2 text-warning opacity-75">
-              <i className="fas fa-spinner fa-spin"></i>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="task-kpi-card d-flex align-items-center justify-content-between">
-            <div>
-              <div className="text-muted small fw-semibold">Overdue Tasks</div>
-              <div className="fs-3 fw-bold text-danger mt-1">{stats.overdue}</div>
-            </div>
-            <div className="fs-2 text-danger opacity-75">
-              <i className="fas fa-exclamation-circle"></i>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Tab Navigation & Filters Bar */}
-      <div className="bg-white p-3 rounded-4 shadow-sm border mb-4">
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-          {/* Tab Selector */}
-          <ul className="nav nav-tabs border-0 gap-2">
-            <li className="nav-item">
-              <button className={`nav-link border-0 fw-semibold px-3 py-2 rounded-3 ${activeTab === 'all' ? 'text-primary-green bg-light-green' : 'text-muted bg-transparent'}`} onClick={() => setActiveTab('all')}>
-                All Tasks
-              </button>
-            </li>
-            <li className="nav-item">
-              <button className={`nav-link border-0 fw-semibold px-3 py-2 rounded-3 ${activeTab === 'my' ? 'text-primary-green bg-light-green' : 'text-muted bg-transparent'}`} onClick={() => setActiveTab('my')}>
-                My Tasks
-              </button>
-            </li>
-            <li className="nav-item">
-              <button className={`nav-link border-0 fw-semibold px-3 py-2 rounded-3 ${activeTab === 'assigned' ? 'text-primary-green bg-light-green' : 'text-muted bg-transparent'}`} onClick={() => setActiveTab('assigned')}>
-                Assigned By Me
-              </button>
-            </li>
+      {/* Tabs & Filters */}
+      <div className="bg-white p-2 rounded-3 shadow-sm border mb-3">
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+          <ul className="nav nav-tabs border-0 gap-1">
+            {tabs.map(t => (
+              <li key={t.key} className="nav-item">
+                <button
+                  className={`nav-link border-0 fw-semibold px-2.5 py-1.5 rounded-3 ${activeTab === t.key ? 'text-white' : 'text-muted bg-transparent'}`}
+                  style={{
+                    fontSize: '0.8rem',
+                    ...(activeTab === t.key ? { backgroundColor: '#10b981' } : {})
+                  }}
+                  onClick={() => setActiveTab(t.key)}
+                >{t.label}</button>
+              </li>
+            ))}
           </ul>
-
-          {/* Quick Stats Search/Filter Actions */}
-          <div className="d-flex flex-wrap gap-2 w-100 w-md-auto">
-            <input 
-              type="text" 
-              placeholder="Search title, desc or user..." 
-              className="search-input flex-grow-1" 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
-            />
-            <select className="filter-select" value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
+          <div className="d-flex flex-wrap gap-1.5">
+            <input type="text" placeholder="Search..." className="search-input" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <select className="filter-select" value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}>
               <option value="All">All Priorities</option>
-              <option value="High">High Priority</option>
-              <option value="Medium">Medium Priority</option>
-              <option value="Low">Low Priority</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
             </select>
-            <select className="filter-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <select className="filter-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="All">All Statuses</option>
-              <option value="Pending">Pending</option>
-              <option value="In-Progress">In-Progress</option>
-              <option value="Completed">Completed</option>
+              {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            <select className="filter-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              <option value="due_date_asc">Due Date (Soonest)</option>
-              <option value="due_date_desc">Due Date (Latest)</option>
+            <select className="filter-select" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+              <option value="due_date_asc">Due (Soonest)</option>
+              <option value="due_date_desc">Due (Latest)</option>
               <option value="created_newest">Created (Newest)</option>
               <option value="priority_high">Priority (Highest)</option>
             </select>
@@ -274,172 +198,239 @@ const TaskBoard: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Grid Content */}
+      {/* Table */}
       {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-success" role="status"></div>
-        </div>
+        <div className="text-center py-5"><div className="spinner-border text-success"></div></div>
       ) : (
-        <div className="row">
-          {filteredTasks.length === 0 ? (
-            <div className="col-12 text-center py-5 text-muted bg-white border rounded-4 shadow-sm">
-              <i className="fas fa-clipboard-check fa-3x mb-3 text-light"></i>
-              <p className="fw-semibold">No tasks match your filters or search criteria.</p>
-              <button className="btn btn-sm btn-outline-success mt-2" onClick={() => { setSearchTerm(''); setPriorityFilter('All'); setStatusFilter('All'); }}>
-                Clear Filters
-              </button>
+        <div className="bg-white border rounded-4 shadow-sm overflow-hidden mb-4">
+          {filtered.length === 0 ? (
+            <div className="text-center py-5 text-muted">
+              <i className="fas fa-clipboard-check fa-3x mb-3 d-block text-light"></i>
+              <p className="fw-semibold">No tasks found.</p>
+              <button className="btn btn-sm btn-outline-success" onClick={() => { setSearchTerm(''); setPriorityFilter('All'); setStatusFilter('All'); }}>Clear Filters</button>
             </div>
           ) : (
-            filteredTasks.map(task => (
-              <div className="col-md-6 col-lg-4 mb-4" key={task.id}>
-                <div className="card h-100 border-0 shadow-sm task-card" style={{ borderRadius: '16px' }}>
-                  <div className="card-body d-flex flex-column">
-                    {/* Header Details */}
-                    <div className="d-flex justify-content-between align-items-start mb-2">
-                      <h5 className="fw-bold text-dark mb-0">
-                        {task.ticket_number && (
-                          <span className="text-primary-green me-1" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                            #TSK-{task.ticket_number}
-                          </span>
-                        )}
-                        {task.title}
-                      </h5>
-                      <span className={`badge ${getPriorityBadgeClass(task.priority)}`} style={{ borderRadius: '6px' }}>{task.priority}</span>
-                    </div>
-                    
-                    {/* Description */}
-                    <p className="text-muted small mb-3 flex-grow-1" style={{ minHeight: '40px' }}>
-                      {task.description || 'No description provided.'}
-                    </p>
-                    
-                    {/* Overdue tag */}
-                    {isOverdue(task) && (
-                      <div className="mb-3">
-                        <span className="overdue-tag">
-                          <i className="fas fa-calendar-times"></i> Overdue
-                        </span>
-                      </div>
-                    )}
+            <div className="table-responsive">
+              <table className="table align-middle tasks-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Ticket</th>
+                    <th>Task Details</th>
+                    <th>Assignee & Collaborators</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Dates</th>
+                    <th style={{ minWidth: '220px' }}>Remarks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(task => (
+                    <tr key={task.id}>
+                      {/* Ticket */}
+                      <td>
+                        <span className="fw-bold small" style={{ color: '#10b981' }}>#TSK-{task.ticket_number || 'N/A'}</span>
+                      </td>
 
-                    {/* Remarks Section */}
-                    <div className="mb-3 p-2 rounded-3" style={{ backgroundColor: '#f8fafc', borderLeft: '3px solid #10b981' }}>
-                      <div className="d-flex justify-content-between align-items-center mb-1">
-                        <strong className="text-dark small" style={{ fontSize: '0.75rem' }}>
-                          <i className="far fa-comment-dots me-1"></i> Remarks / Progress Notes
-                        </strong>
-                        {editingRemarksTaskId !== task.id && (
-                          <button 
-                            className="btn btn-sm btn-link p-0 text-muted" 
-                            style={{ fontSize: '0.72rem', textDecoration: 'none' }}
-                            onClick={() => {
-                              setEditingRemarksTaskId(task.id);
-                              setTempRemarks(task.remarks || '');
-                            }}
-                          >
-                            <i className="fas fa-pencil-alt"></i> Edit
+                      {/* Details */}
+                      <td>
+                        <div className="fw-bold text-dark">{task.title}</div>
+                        <div className="text-muted" style={{ fontSize: '0.78rem', maxWidth: '220px' }} title={task.description}>
+                          {(task.description || 'No description.').slice(0, 80)}{task.description && task.description.length > 80 ? '…' : ''}
+                        </div>
+                      </td>
+
+                      {/* Assignee & Collaborators */}
+                      <td>
+                        <div className="d-flex align-items-center gap-2 mb-1">
+                          <div className="task-avatar" title={task.assigned_to_detail?.username}>{getInitials(task.assigned_to_detail?.username)}</div>
+                          <div>
+                            <div className="small fw-semibold text-dark" style={{ fontSize: '0.8rem' }}>{task.assigned_to_detail?.username || 'Unassigned'}</div>
+                            <div className="text-muted" style={{ fontSize: '0.68rem' }}>Assignee</div>
+                          </div>
+                        </div>
+                        {(task.collaborators_detail || []).length > 0 && (
+                          <div className="d-flex flex-wrap gap-1 mt-1">
+                            {task.collaborators_detail!.map(c => (
+                              <span key={c.id} className="badge bg-light text-dark border d-flex align-items-center gap-1" style={{ fontSize: '0.68rem' }}
+                                title={c.username}>
+                                <span className="task-avatar" style={{ width: '16px', height: '16px', fontSize: '0.55rem' }}>{getInitials(c.username)}</span>
+                                {c.username}
+                                {task.status !== 'Completed' && (
+                                  <button className="btn-close" style={{ fontSize: '0.4rem' }} onClick={() => removeCollaborator(task.id, String(c.id))} title="Remove collaborator" />
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {task.status !== 'Completed' && (
+                          <button className="btn btn-link btn-sm p-0 mt-1 text-muted" style={{ fontSize: '0.72rem' }} onClick={() => { setActionModal({ task, type: 'collaborate' }); setSelectedUserId(''); }}>
+                            <i className="fas fa-user-plus me-1"></i>Add collaborator
                           </button>
                         )}
-                      </div>
-                      
-                      {editingRemarksTaskId === task.id ? (
-                        <div>
-                          <textarea 
-                            className="form-control form-control-sm bg-white mb-2" 
-                            rows={2} 
-                            style={{ fontSize: '0.75rem' }}
-                            value={tempRemarks} 
-                            onChange={(e) => setTempRemarks(e.target.value)}
-                            placeholder="Add progress updates or remarks..."
-                          />
-                          <div className="d-flex justify-content-end gap-1">
-                            <button 
-                              className="btn btn-xs btn-outline-secondary py-0 px-2" 
-                              style={{ fontSize: '0.65rem', borderRadius: '4px' }}
-                              onClick={() => setEditingRemarksTaskId(null)}
-                            >
-                              Cancel
+                      </td>
+
+                      {/* Priority */}
+                      <td>
+                        <span className={`badge ${getPriorityClass(task.priority)}`} style={{ borderRadius: '6px' }}>{task.priority}</span>
+                      </td>
+
+                      {/* Status */}
+                      <td>
+                        <div className="d-flex align-items-center gap-1 flex-wrap">
+                          <span className="badge border" style={{ ...getStatusStyle(task.status), borderRadius: '6px', fontSize: '0.72rem' }}>{task.status}</span>
+                          {task.status !== 'Completed' && (
+                            <div className="dropdown">
+                              <button className="btn btn-sm btn-link p-0 text-muted" type="button" data-bs-toggle="dropdown" title="Change status">
+                                <i className="fas fa-edit"></i>
+                              </button>
+                              <ul className="dropdown-menu shadow border-0" style={{ borderRadius: '12px', fontSize: '0.85rem' }}>
+                                {ALL_STATUSES.map(s => <li key={s}><button className="dropdown-item" onClick={() => updateStatus(task.id, s)}>{s}</button></li>)}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                        {task.status !== 'Completed' && (
+                          <div className="d-flex gap-1 mt-1 flex-wrap">
+                            <button className="btn btn-xs py-0 px-1 text-white" style={{ fontSize: '0.65rem', backgroundColor: '#7c3aed', borderRadius: '4px' }}
+                              onClick={() => { setActionModal({ task, type: 'request' }); setRequestType('approval'); setRequestNote(''); }}>
+                              ✋ Approval
                             </button>
-                            <button 
-                              className="btn btn-xs btn-success py-0 px-2 text-white" 
-                              style={{ fontSize: '0.65rem', borderRadius: '4px' }}
-                              onClick={() => handleSaveRemarks(task.id)}
-                            >
-                              Save
+                            <button className="btn btn-xs py-0 px-1 text-white" style={{ fontSize: '0.65rem', backgroundColor: '#ea580c', borderRadius: '4px' }}
+                              onClick={() => { setActionModal({ task, type: 'request' }); setRequestType('assist'); setRequestNote(''); }}>
+                              🆘 Assist
+                            </button>
+                            <button className="btn btn-xs py-0 px-1 text-white" style={{ fontSize: '0.65rem', backgroundColor: '#0369a1', borderRadius: '4px' }}
+                              onClick={() => { setActionModal({ task, type: 'reassign' }); setSelectedUserId(''); }}>
+                              🔁 Handoff
                             </button>
                           </div>
-                        </div>
-                      ) : (
-                        <p className="text-muted mb-0 small" style={{ fontSize: '0.75rem', whiteSpace: 'pre-line', minHeight: '16px' }}>
-                          {task.remarks || 'No remarks added yet.'}
-                        </p>
-                      )}
-                    </div>
+                        )}
+                      </td>
 
-                    {/* Meta Dates & Status */}
-                    <div className="d-flex flex-column gap-2 mb-3 text-muted small">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span><i className="far fa-calendar me-1"></i> Created: {task.created_at ? new Date(task.created_at).toLocaleDateString() : 'N/A'}</span>
-                        <span className={`badge border ${
-                          task.status === 'Completed' ? 'bg-success-subtle text-success border-success' : 
-                          task.status === 'In-Progress' ? 'bg-primary-subtle text-primary border-primary' : 
-                          'bg-warning-subtle text-warning border-warning'
-                        }`}>{task.status || 'Pending'}</span>
-                      </div>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span><i className="far fa-calendar-alt me-1"></i> Due: {new Date(task.due_date).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-
-                    <hr className="text-muted opacity-25" />
-                    
-                    {/* Footer Operations */}
-                    <div className="d-flex justify-content-between align-items-center mt-auto">
-                      {/* Assignee Details */}
-                      <div className="d-flex align-items-center gap-2">
-                        <div className="task-avatar" title={`Assigned to ${task.assigned_to_detail?.username || 'Unknown'}`}>
-                          {getInitials(task.assigned_to_detail?.username)}
-                        </div>
-                        <div style={{ lineHeight: '1.1' }}>
-                          <div className="small text-dark fw-semibold" style={{ fontSize: '0.8rem' }}>
-                            {task.assigned_to_detail?.username || 'Unassigned'}
-                          </div>
-                          <div className="text-muted" style={{ fontSize: '0.7rem' }}>
-                            Assigned To
+                      {/* Dates */}
+                      <td>
+                        <div style={{ fontSize: '0.78rem' }} className="text-muted">
+                          <div><i className="far fa-calendar me-1"></i>{task.created_at ? new Date(task.created_at).toLocaleDateString() : 'N/A'}</div>
+                          <div className="mt-1">
+                            <i className="far fa-calendar-alt me-1"></i>{new Date(task.due_date).toLocaleDateString()}
+                            {isOverdue(task) && <span className="overdue-tag ms-1"><i className="fas fa-calendar-times"></i> Overdue</span>}
                           </div>
                         </div>
-                      </div>
+                      </td>
 
-                      {/* Actions */}
-                      <div className="d-flex align-items-center gap-2">
-                        <div className="dropdown">
-                          <button className="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" style={{ borderRadius: '8px' }}>
-                            Status
-                          </button>
-                          <ul className="dropdown-menu shadow border-0" style={{ borderRadius: '12px' }}>
-                            <li><button className="dropdown-item" onClick={() => updateTaskStatus(task.id, 'Pending')}>Pending</button></li>
-                            <li><button className="dropdown-item text-primary" onClick={() => updateTaskStatus(task.id, 'In-Progress')}>In-Progress</button></li>
-                            <li><button className="dropdown-item text-success" onClick={() => updateTaskStatus(task.id, 'Completed')}>Completed</button></li>
-                          </ul>
+                      {/* Remarks */}
+                      <td>
+                        <div className="p-2 rounded-3" style={{ backgroundColor: '#f8fafc', borderLeft: '3px solid #10b981' }}>
+                          <div className="d-flex justify-content-between mb-1">
+                            <strong style={{ fontSize: '0.7rem' }}>Notes</strong>
+                            {task.status !== 'Completed' && editingRemarksTaskId !== task.id && (
+                              <button className="btn btn-link btn-sm p-0 text-muted" style={{ fontSize: '0.68rem', textDecoration: 'none' }}
+                                onClick={() => { setEditingRemarksTaskId(task.id); setTempRemarks(task.remarks || ''); }}>
+                                <i className="fas fa-pencil-alt"></i> Edit
+                              </button>
+                            )}
+                          </div>
+                          {editingRemarksTaskId === task.id ? (
+                            <>
+                              <textarea className="form-control form-control-sm bg-white mb-1" rows={2} style={{ fontSize: '0.75rem' }}
+                                value={tempRemarks} onChange={e => setTempRemarks(e.target.value)} />
+                              <div className="d-flex justify-content-end gap-1">
+                                <button className="btn btn-xs btn-outline-secondary py-0 px-1" style={{ fontSize: '0.65rem' }} onClick={() => setEditingRemarksTaskId(null)}>Cancel</button>
+                                <button className="btn btn-xs btn-success py-0 px-1 text-white" style={{ fontSize: '0.65rem' }} onClick={() => saveRemarks(task.id)}>Save</button>
+                              </div>
+                            </>
+                          ) : (
+                            <div style={{ fontSize: '0.75rem', maxHeight: '60px', overflow: 'hidden', whiteSpace: 'pre-line' }} className="text-muted">
+                              {task.remarks || 'No remarks.'}
+                            </div>
+                          )}
                         </div>
-
-                        <button 
-                          className="delete-btn" 
-                          onClick={() => deleteTask(task.id)}
-                          title="Delete Task"
-                        >
-                          <i className="fas fa-trash-alt"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
 
+      {/* Create Task Modal */}
       {showModal && <CreateTaskModal onClose={() => setShowModal(false)} onCreated={fetchTasks} />}
+
+      {/* Collaboration / Reassign / Request Action Modal */}
+      {actionModal && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex={-1}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow" style={{ borderRadius: '16px' }}>
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold">
+                  {actionModal.type === 'reassign' && '🔁 Handoff Task'}
+                  {actionModal.type === 'collaborate' && '👥 Add Collaborator'}
+                  {actionModal.type === 'request' && '📣 Request Approval / Assistance'}
+                </h5>
+                <button className="btn-close" onClick={() => setActionModal(null)}></button>
+              </div>
+              <div className="modal-body">
+                <p className="text-muted small mb-3">
+                  Task: <strong>#{actionModal.task.ticket_number} — {actionModal.task.title}</strong>
+                </p>
+
+                {(actionModal.type === 'reassign' || actionModal.type === 'collaborate') && (
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small">
+                      {actionModal.type === 'reassign' ? 'Reassign To' : 'Add Collaborator'}
+                    </label>
+                    <select className="form-select" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)}>
+                      <option value="">Select user...</option>
+                      {allUsers.map(u => <option key={u.id} value={u.uuid || u.id}>{u.username}</option>)}
+                    </select>
+                    {actionModal.type === 'reassign' && (
+                      <div className="alert alert-info mt-2 py-2 small">
+                        <i className="fas fa-info-circle me-1"></i>
+                        Current assignee will be moved to collaborators automatically.
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {actionModal.type === 'request' && (
+                  <>
+                    <div className="mb-3">
+                      <label className="form-label fw-semibold small">Request Type</label>
+                      <div className="d-flex gap-2">
+                        <button className={`btn flex-fill ${requestType === 'approval' ? 'text-white' : 'btn-outline-secondary'}`}
+                          style={requestType === 'approval' ? { backgroundColor: '#7c3aed' } : {}}
+                          onClick={() => setRequestType('approval')}>
+                          ✋ Request Approval
+                        </button>
+                        <button className={`btn flex-fill ${requestType === 'assist' ? 'text-white' : 'btn-outline-secondary'}`}
+                          style={requestType === 'assist' ? { backgroundColor: '#ea580c' } : {}}
+                          onClick={() => setRequestType('assist')}>
+                          🆘 Request Assist
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label fw-semibold small">Note / Reason</label>
+                      <textarea className="form-control bg-light" rows={3} value={requestNote}
+                        onChange={e => setRequestNote(e.target.value)}
+                        placeholder="Describe what approval or assistance is needed..." />
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="modal-footer border-0">
+                <button className="btn btn-light fw-semibold" onClick={() => setActionModal(null)}>Cancel</button>
+                <button className="btn text-white fw-bold px-4" style={{ backgroundColor: '#10b981' }} onClick={submitAction}
+                  disabled={actionModal.type !== 'request' && !selectedUserId}>
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
