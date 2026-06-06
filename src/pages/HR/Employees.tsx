@@ -4,6 +4,7 @@ import { Employee, DEPARTMENTS, formatDate } from './hrTypes';
 
 const Employees: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [erpUsers, setErpUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -11,7 +12,8 @@ const Employees: React.FC = () => {
   const [deptFilter, setDeptFilter] = useState('all');
   const [error, setError] = useState('');
 
-  const [form, setForm] = useState<Omit<Employee, 'id'>>({
+  const [form, setForm] = useState<Omit<Employee, 'id'> & { user: string }>({
+    user: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -47,7 +49,21 @@ const Employees: React.FC = () => {
     }
   };
 
-  useEffect(() => { fetchEmployees(); }, []);
+  useEffect(() => {
+    fetchEmployees();
+    api.get('/users/').then(res => setErpUsers(res.data)).catch(() => {});
+  }, []);
+
+  const handleUserSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const userId = e.target.value;
+    const selectedUser = erpUsers.find(u => u.id.toString() === userId);
+    setForm({
+      ...form,
+      user: userId,
+      email: selectedUser ? selectedUser.email : form.email,
+      firstName: selectedUser ? selectedUser.username : form.firstName,
+    });
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +71,7 @@ const Employees: React.FC = () => {
     setError('');
     try {
       await api.post('/hr/employees/', {
+        user: form.user || null,
         first_name: form.firstName,
         last_name: form.lastName,
         email: form.email,
@@ -68,7 +85,7 @@ const Employees: React.FC = () => {
       await fetchEmployees();
       setShowModal(false);
       setForm({
-        firstName: '', lastName: '', email: '', phone: '',
+        user: '', firstName: '', lastName: '', email: '', phone: '',
         department: 'Farm Operations', position: '',
         employmentType: 'full-time',
         startDate: new Date().toISOString().split('T')[0],
@@ -173,6 +190,18 @@ const Employees: React.FC = () => {
               <form onSubmit={handleAdd}>
                 <div className="modal-body">
                   <div className="row g-3">
+                    <div className="col-12">
+                      <label className="form-label text-muted small fw-semibold">Link to ERP User Account</label>
+                      <select className="form-select bg-light border-primary" value={form.user} onChange={handleUserSelect}>
+                        <option value="">-- No linked user (create independent profile) --</option>
+                        {erpUsers.map(u => (
+                          <option key={u.id} value={u.id}>{u.username} ({u.email})</option>
+                        ))}
+                      </select>
+                      <small className="text-muted" style={{ fontSize: '11px' }}>
+                        Select an existing user to link their account to this HR profile.
+                      </small>
+                    </div>
                     <div className="col-md-6">
                       <label className="form-label text-muted small fw-semibold">First Name</label>
                       <input type="text" className="form-control bg-light" required value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})} />

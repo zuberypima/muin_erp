@@ -1,10 +1,46 @@
-import { demoEmployees, demoAttendance, demoLeaves } from './hrTypes';
+import React, { useEffect, useState } from 'react';
+import api from '../../api/axiosConfig';
 
 const HRDashboard: React.FC = () => {
-  const activeCount = demoEmployees.filter(e => e.status === 'active').length;
-  const leaveCount = demoEmployees.filter(e => e.status === 'on-leave').length;
-  const todayPresent = demoAttendance.filter(a => a.status === 'present' || a.status === 'late').length;
-  const pendingLeaves = demoLeaves.filter(l => l.status === 'pending').length;
+  const today = new Date().toISOString().split('T')[0];
+
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [todayAttendance, setTodayAttendance] = useState<any[]>([]);
+  const [leaves, setLeaves] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const [empRes, attRes, leaveRes] = await Promise.all([
+          api.get('/hr/employees/'),
+          api.get(`/hr/attendance/?date=${today}`),
+          api.get('/hr/leaves/'),
+        ]);
+        setEmployees(empRes.data);
+        setTodayAttendance(attRes.data);
+        setLeaves(leaveRes.data);
+      } catch (e) {
+        console.error('HR Dashboard fetch error', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
+  }, [today]);
+
+  const activeCount = employees.filter(e => e.status === 'active').length;
+  const onLeaveCount = employees.filter(e => e.status === 'on-leave').length;
+  const presentToday = todayAttendance.filter(a => a.status === 'present' || a.status === 'late').length;
+  const pendingLeaves = leaves.filter(l => l.status === 'pending').length;
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+        <div className="spinner-border text-success"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="container-fluid p-0">
@@ -16,7 +52,7 @@ const HRDashboard: React.FC = () => {
               <i className="fas fa-users"></i>
             </div>
             <h6 className="kpi-label">Active Employees</h6>
-            <h3 className="kpi-value">{activeCount} / {demoEmployees.length}</h3>
+            <h3 className="kpi-value">{activeCount} / {employees.length}</h3>
           </div>
         </div>
         <div className="col-md-3">
@@ -25,7 +61,7 @@ const HRDashboard: React.FC = () => {
               <i className="fas fa-plane-departure"></i>
             </div>
             <h6 className="kpi-label">On Leave</h6>
-            <h3 className="kpi-value">{leaveCount}</h3>
+            <h3 className="kpi-value">{onLeaveCount}</h3>
           </div>
         </div>
         <div className="col-md-3">
@@ -34,7 +70,7 @@ const HRDashboard: React.FC = () => {
               <i className="fas fa-clock"></i>
             </div>
             <h6 className="kpi-label">Present Today</h6>
-            <h3 className="kpi-value">{todayPresent}</h3>
+            <h3 className="kpi-value">{presentToday}</h3>
           </div>
         </div>
         <div className="col-md-3">
@@ -49,66 +85,88 @@ const HRDashboard: React.FC = () => {
       </div>
 
       <div className="row g-4">
-        {/* Attendance Summary */}
+        {/* Today's Attendance Snapshot */}
         <div className="col-lg-6">
           <div className="hr-table-card">
-            <div className="p-4 border-bottom">
+            <div className="p-4 border-bottom d-flex justify-content-between align-items-center">
               <h5 className="fw-bold mb-0">Today's Attendance Snapshot</h5>
+              <span className="badge bg-light text-muted border small">{today}</span>
             </div>
             <div className="table-responsive">
-              <table className="table hr-table">
-                <thead>
-                  <tr>
-                    <th>Employee</th>
-                    <th>Check In</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {demoAttendance.slice(0, 5).map(att => (
-                    <tr key={att.id}>
-                      <td className="fw-medium">{att.employeeName}</td>
-                      <td>{att.checkIn || '—'}</td>
-                      <td>
-                        <span className={`hr-badge ${att.status}`}>{att.status}</span>
-                      </td>
+              {todayAttendance.length === 0 ? (
+                <div className="text-center text-muted py-4">
+                  <i className="fas fa-calendar-times fa-2x mb-2 d-block" style={{ color: '#cbd5e1' }}></i>
+                  No attendance logged for today yet.
+                </div>
+              ) : (
+                <table className="table hr-table">
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      <th>Check In</th>
+                      <th>Check Out</th>
+                      <th>Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {todayAttendance.slice(0, 6).map(att => (
+                      <tr key={att.id}>
+                        <td>
+                          <div className="fw-medium">{att.employee_name}</div>
+                          <div className="small text-muted">{att.employee_id_code}</div>
+                        </td>
+                        <td>{att.check_in || '—'}</td>
+                        <td>{att.check_out || '—'}</td>
+                        <td><span className={`hr-badge ${att.status}`}>{att.status}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Leave Requests Summary */}
+        {/* Recent Leave Requests */}
         <div className="col-lg-6">
           <div className="hr-table-card">
-            <div className="p-4 border-bottom">
+            <div className="p-4 border-bottom d-flex justify-content-between align-items-center">
               <h5 className="fw-bold mb-0">Recent Leave Requests</h5>
+              <span className="badge rounded-pill" style={{ backgroundColor: pendingLeaves > 0 ? '#fef3c7' : '#f1f5f9', color: pendingLeaves > 0 ? '#d97706' : '#64748b', fontSize: '0.75rem' }}>
+                {pendingLeaves} pending
+              </span>
             </div>
             <div className="table-responsive">
-              <table className="table hr-table">
-                <thead>
-                  <tr>
-                    <th>Employee</th>
-                    <th>Type</th>
-                    <th>Days</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {demoLeaves.slice(0, 5).map(leave => (
-                    <tr key={leave.id}>
-                      <td className="fw-medium">{leave.employeeName}</td>
-                      <td className="text-capitalize">{leave.leaveType}</td>
-                      <td>{leave.days}</td>
-                      <td>
-                        <span className={`hr-badge ${leave.status}`}>{leave.status}</span>
-                      </td>
+              {leaves.length === 0 ? (
+                <div className="text-center text-muted py-4">
+                  <i className="fas fa-inbox fa-2x mb-2 d-block" style={{ color: '#cbd5e1' }}></i>
+                  No leave requests found.
+                </div>
+              ) : (
+                <table className="table hr-table">
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      <th>Type</th>
+                      <th>Days</th>
+                      <th>Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {leaves.slice(0, 6).map(leave => (
+                      <tr key={leave.id}>
+                        <td>
+                          <div className="fw-medium">{leave.employee_name}</div>
+                          <div className="small text-muted">{leave.department}</div>
+                        </td>
+                        <td className="text-capitalize">{leave.leave_type}</td>
+                        <td>{leave.days}d</td>
+                        <td><span className={`hr-badge ${leave.status}`}>{leave.status}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>
