@@ -1,35 +1,72 @@
-import React, { useState } from 'react';
-import { LeaveRequest, demoLeaves, formatDate } from './hrTypes';
+import React, { useState, useEffect } from 'react';
+import api from '../../api/axiosConfig';
+import { formatDate } from './hrTypes';
+
+interface LeaveRequest {
+  id: number;
+  employee: number;
+  employee_name: string;
+  department: string;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  days: number;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  applied_on: string;
+}
+
+interface Employee { id: number; full_name: string; department: string; }
 
 const Leaves: React.FC = () => {
-  const [leaves, setLeaves] = useState<LeaveRequest[]>(demoLeaves);
+  const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [error, setError] = useState('');
 
-  const [form, setForm] = useState<Omit<LeaveRequest, 'id' | 'appliedOn' | 'status'>>({
-    employeeId: '',
-    employeeName: '',
-    department: 'Farm Operations',
-    leaveType: 'annual',
-    startDate: '',
-    endDate: '',
+  const [form, setForm] = useState({
+    employee: '',
+    leave_type: 'annual',
+    start_date: '',
+    end_date: '',
     days: 1,
-    reason: ''
+    reason: '',
   });
 
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newRequest: LeaveRequest = {
-      ...form,
-      id: `LV-${(leaves.length + 1).toString().padStart(3, '0')}`,
-      status: 'pending',
-      appliedOn: new Date().toISOString().split('T')[0]
-    };
-    setLeaves([newRequest, ...leaves]);
-    setShowModal(false);
+  const fetchLeaves = async () => {
+    try {
+      const res = await api.get('/hr/leaves/');
+      setLeaves(res.data);
+    } catch { setError('Failed to load leave requests.'); }
+    finally { setLoading(false); }
   };
 
-  const handleStatusUpdate = (id: string, newStatus: 'approved' | 'rejected') => {
-    setLeaves(leaves.map(l => l.id === id ? { ...l, status: newStatus } : l));
+  useEffect(() => {
+    fetchLeaves();
+    api.get('/hr/employees/').then(r => setEmployees(r.data)).catch(() => {});
+  }, []);
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+    try {
+      await api.post('/hr/leaves/', form);
+      await fetchLeaves();
+      setShowModal(false);
+      setForm({ employee: '', leave_type: 'annual', start_date: '', end_date: '', days: 1, reason: '' });
+    } catch (err: any) {
+      setError('Failed to submit leave request.');
+    } finally { setSaving(false); }
+  };
+
+  const handleStatusUpdate = async (id: number, action: 'approve' | 'reject') => {
+    try {
+      await api.post(`/hr/leaves/${id}/${action}/`);
+      setLeaves(leaves.map(l => l.id === id ? { ...l, status: action === 'approve' ? 'approved' : 'rejected' } : l));
+    } catch { setError(`Failed to ${action} leave.`); }
   };
 
   return (
@@ -37,58 +74,62 @@ const Leaves: React.FC = () => {
       <div className="hr-table-card">
         <div className="d-flex justify-content-between align-items-center px-4 pt-4 pb-3">
           <h5 className="fw-bold mb-0">Leave Requests</h5>
-          <button className="btn btn-sm text-white fw-bold px-3 py-1.5" style={{ backgroundColor: '#10b981', borderRadius: '8px' }} onClick={() => setShowModal(true)}>
-            <i className="fas fa-plus me-2"></i> Request Leave
+          <button className="btn btn-sm text-white fw-bold px-3"
+            style={{ backgroundColor: '#10b981', borderRadius: '8px' }}
+            onClick={() => setShowModal(true)}>
+            <i className="fas fa-plus me-2"></i>Request Leave
           </button>
         </div>
 
-        <div className="table-responsive">
-          <table className="table hr-table align-middle">
-            <thead>
-              <tr>
-                <th>Employee Name</th>
-                <th>Type</th>
-                <th>Dates</th>
-                <th>Days</th>
-                <th>Reason</th>
-                <th>Applied On</th>
-                <th>Status</th>
-                <th className="text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaves.map(leave => (
-                <tr key={leave.id}>
-                  <td className="fw-semibold text-dark">{leave.employeeName}</td>
-                  <td className="text-capitalize">{leave.leaveType}</td>
-                  <td className="small">
-                    {formatDate(leave.startDate)} to {formatDate(leave.endDate)}
-                  </td>
-                  <td>{leave.days} {leave.days === 1 ? 'day' : 'days'}</td>
-                  <td className="text-muted small" style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {leave.reason}
-                  </td>
-                  <td className="small text-muted">{formatDate(leave.appliedOn)}</td>
-                  <td>
-                    <span className={`hr-badge ${leave.status}`}>{leave.status}</span>
-                  </td>
-                  <td className="text-end">
-                    {leave.status === 'pending' && (
-                      <div className="d-flex justify-content-end gap-2">
-                        <button className="btn btn-xs btn-success py-1 px-2 text-white" style={{ fontSize: '11px', borderRadius: '6px' }} onClick={() => handleStatusUpdate(leave.id, 'approved')}>
-                          Approve
-                        </button>
-                        <button className="btn btn-xs btn-danger py-1 px-2 text-white" style={{ fontSize: '11px', borderRadius: '6px' }} onClick={() => handleStatusUpdate(leave.id, 'rejected')}>
-                          Reject
-                        </button>
-                      </div>
-                    )}
-                  </td>
+        {error && <div className="alert alert-danger mx-4 py-2 small">{error}</div>}
+
+        {loading ? (
+          <div className="text-center py-5"><div className="spinner-border text-success"></div></div>
+        ) : (
+          <div className="table-responsive">
+            <table className="table hr-table align-middle">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Dept.</th>
+                  <th>Type</th>
+                  <th>Dates</th>
+                  <th>Days</th>
+                  <th>Reason</th>
+                  <th>Applied On</th>
+                  <th>Status</th>
+                  <th className="text-end">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {leaves.length === 0 ? (
+                  <tr><td colSpan={9} className="text-center text-muted py-4">No leave requests found.</td></tr>
+                ) : leaves.map(leave => (
+                  <tr key={leave.id}>
+                    <td className="fw-semibold text-dark">{leave.employee_name}</td>
+                    <td className="small text-muted">{leave.department}</td>
+                    <td className="text-capitalize">{leave.leave_type}</td>
+                    <td className="small">{formatDate(leave.start_date)} → {formatDate(leave.end_date)}</td>
+                    <td>{leave.days}d</td>
+                    <td className="text-muted small" style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{leave.reason}</td>
+                    <td className="small text-muted">{formatDate(leave.applied_on)}</td>
+                    <td><span className={`hr-badge ${leave.status}`}>{leave.status}</span></td>
+                    <td className="text-end">
+                      {leave.status === 'pending' && (
+                        <div className="d-flex justify-content-end gap-1">
+                          <button className="btn btn-success btn-sm py-0 px-2 text-white" style={{ fontSize: '11px', borderRadius: '6px' }}
+                            onClick={() => handleStatusUpdate(leave.id, 'approve')}>Approve</button>
+                          <button className="btn btn-danger btn-sm py-0 px-2 text-white" style={{ fontSize: '11px', borderRadius: '6px' }}
+                            onClick={() => handleStatusUpdate(leave.id, 'reject')}>Reject</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {showModal && (
@@ -103,12 +144,19 @@ const Leaves: React.FC = () => {
                 <div className="modal-body">
                   <div className="row g-3">
                     <div className="col-12">
-                      <label className="form-label text-muted small fw-semibold">Employee Name</label>
-                      <input type="text" className="form-control bg-light" required placeholder="e.g. Peter Kamau" value={form.employeeName} onChange={e => setForm({...form, employeeName: e.target.value})} />
+                      <label className="form-label text-muted small fw-semibold">Employee</label>
+                      <select className="form-select bg-light" required value={form.employee}
+                        onChange={e => setForm({...form, employee: e.target.value})}>
+                        <option value="">Select employee...</option>
+                        {employees.map((emp: any) => (
+                          <option key={emp.id} value={emp.id}>{emp.full_name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="col-6">
                       <label className="form-label text-muted small fw-semibold">Leave Type</label>
-                      <select className="form-select bg-light" value={form.leaveType} onChange={e => setForm({...form, leaveType: e.target.value as any})}>
+                      <select className="form-select bg-light" value={form.leave_type}
+                        onChange={e => setForm({...form, leave_type: e.target.value})}>
                         <option value="annual">Annual</option>
                         <option value="sick">Sick</option>
                         <option value="maternity">Maternity</option>
@@ -119,25 +167,31 @@ const Leaves: React.FC = () => {
                     </div>
                     <div className="col-6">
                       <label className="form-label text-muted small fw-semibold">Duration (Days)</label>
-                      <input type="number" min={1} className="form-control bg-light" required value={form.days} onChange={e => setForm({...form, days: parseInt(e.target.value) || 1})} />
+                      <input type="number" min={1} className="form-control bg-light" required
+                        value={form.days} onChange={e => setForm({...form, days: parseInt(e.target.value) || 1})} />
                     </div>
                     <div className="col-6">
                       <label className="form-label text-muted small fw-semibold">Start Date</label>
-                      <input type="date" className="form-control bg-light" required value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} />
+                      <input type="date" className="form-control bg-light" required value={form.start_date}
+                        onChange={e => setForm({...form, start_date: e.target.value})} />
                     </div>
                     <div className="col-6">
                       <label className="form-label text-muted small fw-semibold">End Date</label>
-                      <input type="date" className="form-control bg-light" required value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} />
+                      <input type="date" className="form-control bg-light" required value={form.end_date}
+                        onChange={e => setForm({...form, end_date: e.target.value})} />
                     </div>
                     <div className="col-12">
                       <label className="form-label text-muted small fw-semibold">Reason</label>
-                      <textarea className="form-control bg-light" rows={2} required value={form.reason} onChange={e => setForm({...form, reason: e.target.value})}></textarea>
+                      <textarea className="form-control bg-light" rows={2} required value={form.reason}
+                        onChange={e => setForm({...form, reason: e.target.value})}></textarea>
                     </div>
                   </div>
                 </div>
                 <div className="modal-footer border-0">
                   <button type="button" className="btn btn-light fw-semibold" onClick={() => setShowModal(false)}>Cancel</button>
-                  <button type="submit" className="btn text-white fw-bold px-4" style={{ backgroundColor: '#10b981' }}>Submit Request</button>
+                  <button type="submit" className="btn text-white fw-bold px-4" style={{ backgroundColor: '#10b981' }} disabled={saving}>
+                    {saving ? 'Submitting...' : 'Submit Request'}
+                  </button>
                 </div>
               </form>
             </div>
