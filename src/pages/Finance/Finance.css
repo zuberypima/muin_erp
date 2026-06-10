@@ -242,6 +242,58 @@
   box-shadow: 0 0 0 0.2rem rgba(16,185,129,0.15);
 }
 
+/* ── Cashflow Health Badge ──────────────────────────────────────────────── */
+.cashflow-health {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.45rem 1rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.cashflow-health.healthy {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1.5px solid #a7f3d0;
+}
+
+.cashflow-health.warning {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1.5px solid #fde68a;
+}
+
+.cashflow-health.danger {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1.5px solid #fecaca;
+}
+
+/* ── Bar Chart SVG Wrapper ─────────────────────────────────────────────── */
+.cashflow-chart-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* ── Forecast Table – future rows ─────────────────────────────────────── */
+.finance-table tbody tr.forecast-row {
+  background: #fafafa;
+}
+
+/* ── Sparkline wrapper ─────────────────────────────────────────────────── */
+.sparkline-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Period Switcher Buttons ───────────────────────────────────────────── */
+.btn-finance-primary.btn-sm {
+  padding: 0.4rem 0.9rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .finance-subnav {
@@ -253,5 +305,9 @@
   }
   .kpi-value {
     font-size: 1.25rem;
+  }
+  .cashflow-health {
+    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem;
   }
 }

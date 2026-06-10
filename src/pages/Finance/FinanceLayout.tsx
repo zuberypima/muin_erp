@@ -10,6 +10,7 @@ const FinanceLayout: React.FC = () => {
     { to: '/finance/transactions', label: 'Transactions', icon: 'fas fa-exchange-alt' },
     { to: '/finance/budgets', label: 'Budgets', icon: 'fas fa-wallet' },
     { to: '/finance/loans', label: 'Loans', icon: 'fas fa-hand-holding-usd' },
+    { to: '/finance/cashflow', label: 'Cashflow', icon: 'fas fa-water' },
   ];
 
   return (

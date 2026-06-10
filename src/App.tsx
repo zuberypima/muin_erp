@@ -15,6 +15,7 @@ import Expenses from './pages/Finance/Expenses';
 import Transactions from './pages/Finance/Transactions';
 import Budgets from './pages/Finance/Budgets';
 import Loans from './pages/Finance/Loans';
+import CashFlow from './pages/Finance/CashFlow';
 
 // HR Module
 import HRLayout from './pages/HR/HRLayout';
@@ -23,6 +24,17 @@ import Employees from './pages/HR/Employees';
 import Attendance from './pages/HR/Attendance';
 import Leaves from './pages/HR/Leaves';
 import Performance from './pages/HR/Performance';
+
+// Procurement & Inventory Module
+import ProcurementLayout from './pages/Procurement/ProcurementLayout';
+import ProcurementDashboard from './pages/Procurement/ProcurementDashboard';
+import PurchaseRequests from './pages/Procurement/PurchaseRequests';
+import PurchaseOrders from './pages/Procurement/PurchaseOrders';
+import GoodsReceiving from './pages/Procurement/GoodsReceiving';
+import Inventory from './pages/Procurement/Inventory';
+import StockTracking from './pages/Procurement/StockTracking';
+import Assets from './pages/Procurement/Assets';
+import InventoryReports from './pages/Procurement/InventoryReports';
 
 const App: React.FC = () => {
   return (
@@ -47,6 +59,7 @@ const App: React.FC = () => {
                 <Route path="transactions" element={<Transactions />} />
                 <Route path="budgets" element={<Budgets />} />
                 <Route path="loans" element={<Loans />} />
+                <Route path="cashflow" element={<CashFlow />} />
               </Route>
 
               {/* HR Module */}
@@ -56,6 +69,18 @@ const App: React.FC = () => {
                 <Route path="attendance" element={<Attendance />} />
                 <Route path="leaves" element={<Leaves />} />
                 <Route path="performance" element={<Performance />} />
+              </Route>
+
+              {/* Procurement & Inventory Module */}
+              <Route path="procurement" element={<ProcurementLayout />}>
+                <Route index element={<ProcurementDashboard />} />
+                <Route path="purchase-requests" element={<PurchaseRequests />} />
+                <Route path="purchase-orders" element={<PurchaseOrders />} />
+                <Route path="goods-receiving" element={<GoodsReceiving />} />
+                <Route path="inventory" element={<Inventory />} />
+                <Route path="stock-tracking" element={<StockTracking />} />
+                <Route path="assets" element={<Assets />} />
+                <Route path="reports" element={<InventoryReports />} />
               </Route>
             </Route>
           </Route>

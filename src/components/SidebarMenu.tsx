@@ -90,6 +90,11 @@ const SidebarMenu: React.FC = () => {
             <i className="fas fa-users-cog nav-icon"></i> HR Management
           </NavLink>
         </li>
+        <li className="nav-item">
+          <NavLink to="/procurement" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
+            <i className="fas fa-boxes nav-icon"></i> Procurement
+          </NavLink>
+        </li>
         <li className="my-3"><hr className="sidebar-divider" /></li>
         
         <p className="menu-label text-muted text-uppercase fw-bold mb-2">Support & Tools</p>
