@@ -29,11 +29,11 @@ const SidebarMenu: React.FC = () => {
         <div className="logo-icon me-2">
           <i className="fas fa-leaf"></i>
         </div>
-        <span className="fs-4 fw-bold text-dark">Muini <span className="text-primary-green">Admin</span></span>
+        <span className="fs-4 fw-bold text-dark">MUIN <span className="text-primary-green"> Ltd</span></span>
       </NavLink>
-      
+
       <p className="menu-label text-muted text-uppercase fw-bold mb-2">Main Menu</p>
-      
+
       <ul className="nav nav-pills flex-column mb-auto gap-2" style={{ flex: 1 }}>
         <li className="nav-item">
           <NavLink to="/services" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
@@ -41,7 +41,7 @@ const SidebarMenu: React.FC = () => {
           </NavLink>
         </li>
 
-        
+
         <li className="nav-item">
           <div
             className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isTasksRoute ? 'active' : ''}`}
@@ -54,7 +54,7 @@ const SidebarMenu: React.FC = () => {
             </div>
             <i className={`fas fa-chevron-${tasksDropdownOpen ? 'down' : 'right'} ms-auto`} style={{ fontSize: '0.8rem' }}></i>
           </div>
-          
+
           {tasksDropdownOpen && (
             <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
               <li className="nav-item">
@@ -96,9 +96,9 @@ const SidebarMenu: React.FC = () => {
           </NavLink>
         </li>
         <li className="my-3"><hr className="sidebar-divider" /></li>
-        
+
         <p className="menu-label text-muted text-uppercase fw-bold mb-2">Support & Tools</p>
-        
+
         <li className="nav-item">
           <a href="#" className="nav-link custom-nav-link">
             <i className="fas fa-comments nav-icon"></i> Customer Support
