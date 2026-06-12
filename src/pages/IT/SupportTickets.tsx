@@ -4,6 +4,7 @@ import {
   SupportTicket, TicketCategory, TicketPriority, TicketStatus,
   formatDateTime,
 } from './itTypes';
+import { useAuth } from '../../context/AuthContext';
 
 const CATEGORIES: TicketCategory[] = ['hardware', 'software', 'network', 'account', 'other'];
 const PRIORITIES: TicketPriority[] = ['low', 'medium', 'high', 'critical'];
@@ -19,6 +20,7 @@ const PRIORITY_ICON: Record<TicketPriority, string> = {
 };
 
 const SupportTickets: React.FC = () => {
+  const { user } = useAuth();
   const [tickets, setTickets]         = useState<SupportTicket[]>([]);
   const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState('');
@@ -55,7 +57,7 @@ const SupportTickets: React.FC = () => {
     return matchQ && matchStat && matchPri && matchCat;
   });
 
-  const openAdd  = () => { setEditing(null); setForm(emptyTicket()); setShowModal(true); };
+  const openAdd  = () => { setEditing(null); setForm({ ...emptyTicket(), raised_by: user?.username || '' }); setShowModal(true); };
   const openEdit = (t: SupportTicket) => { setEditing(t); setForm({ ...t }); setShowModal(true); };
   const closeModal = () => { setShowModal(false); setEditing(null); };
 
@@ -243,8 +245,8 @@ const SupportTickets: React.FC = () => {
                   </select>
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label small fw-semibold">Raised By *</label>
-                  <input className="form-control" value={form.raised_by || ''} onChange={f('raised_by')} placeholder="Employee name" />
+                  <label className="form-label small fw-semibold">Raised By</label>
+                  <input className="form-control" value={form.raised_by || ''} disabled placeholder="Employee name" />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">Assigned To</label>
