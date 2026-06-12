@@ -36,6 +36,15 @@ import StockTracking from './pages/Procurement/StockTracking';
 import Assets from './pages/Procurement/Assets';
 import InventoryReports from './pages/Procurement/InventoryReports';
 
+// IT Module
+import ITLayout from './pages/IT/ITLayout';
+import ITDashboard from './pages/IT/ITDashboard';
+import ITAssets from './pages/IT/ITAssets';
+import UserAccounts from './pages/IT/UserAccounts';
+import SupportTickets from './pages/IT/SupportTickets';
+import MaintenanceRecords from './pages/IT/MaintenanceRecords';
+import SoftwareLicenses from './pages/IT/SoftwareLicenses';
+
 const App: React.FC = () => {
   return (
     <AuthProvider>
@@ -81,6 +90,16 @@ const App: React.FC = () => {
                 <Route path="stock-tracking" element={<StockTracking />} />
                 <Route path="assets" element={<Assets />} />
                 <Route path="reports" element={<InventoryReports />} />
+              </Route>
+
+              {/* IT Module */}
+              <Route path="it" element={<ITLayout />}>
+                <Route index element={<ITDashboard />} />
+                <Route path="assets" element={<ITAssets />} />
+                <Route path="user-accounts" element={<UserAccounts />} />
+                <Route path="support-tickets" element={<SupportTickets />} />
+                <Route path="maintenance" element={<MaintenanceRecords />} />
+                <Route path="software-licenses" element={<SoftwareLicenses />} />
               </Route>
             </Route>
           </Route>
