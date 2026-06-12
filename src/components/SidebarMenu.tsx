@@ -102,28 +102,7 @@ const SidebarMenu: React.FC = () => {
         </li>
         <li className="my-3"><hr className="sidebar-divider" /></li>
 
-        <p className="menu-label text-muted text-uppercase fw-bold mb-2">Support & Tools</p>
 
-        <li className="nav-item">
-          <a href="#" className="nav-link custom-nav-link">
-            <i className="fas fa-comments nav-icon"></i> Customer Support
-          </a>
-        </li>
-        <li className="nav-item">
-          <a href="#" className="nav-link custom-nav-link">
-            <i className="fas fa-cloud-sun nav-icon"></i> Weather Info
-          </a>
-        </li>
-        <li className="nav-item">
-          <a href="#" className="nav-link custom-nav-link">
-            <i className="fas fa-hand-holding-usd nav-icon"></i> Loan Management
-          </a>
-        </li>
-        <li className="nav-item">
-          <a href="#" className="nav-link custom-nav-link">
-            <i className="fas fa-shield-alt nav-icon"></i> Insurance
-          </a>
-        </li>
         <li className="nav-item">
           <a href="#" className="nav-link custom-nav-link">
             <i className="fas fa-cog nav-icon"></i> Settings
