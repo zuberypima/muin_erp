@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../api/axiosConfig';
 import {
   SoftwareLicense, LicenseType, LicenseStatus,
-  demoLicenses, formatCurrency, formatDate,
+  formatCurrency, formatDate,
 } from './itTypes';
 
 const LICENSE_TYPES: LicenseType[] = ['perpetual', 'subscription', 'open-source', 'trial'];
 
 const emptyLicense = (): Partial<SoftwareLicense> => ({
-  softwareName: '', vendor: '', licenseKey: '', licenseType: 'subscription',
-  seatsTotal: 1, seatsUsed: 0, purchaseDate: '', expiryDate: '', cost: 0,
+  software_name: '', vendor: '', license_key: '', license_type: 'subscription',
+  seats_total: 1, seats_used: 0, purchase_date: null, expiry_date: null, cost: 0,
   status: 'active', notes: '',
 });
 
@@ -17,19 +18,36 @@ const TYPE_COLOR: Record<LicenseType, string> = {
 };
 
 const SoftwareLicenses: React.FC = () => {
-  const [licenses, setLicenses]       = useState<SoftwareLicense[]>(demoLicenses);
+  const [licenses, setLicenses]       = useState<SoftwareLicense[]>([]);
+  const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterType, setFilterType]   = useState<string>('all');
+  
   const [showModal, setShowModal]     = useState(false);
   const [editing, setEditing]         = useState<SoftwareLicense | null>(null);
   const [form, setForm]               = useState<Partial<SoftwareLicense>>(emptyLicense());
 
+  const fetchLicenses = async () => {
+    try {
+      const res = await api.get('/it/licenses/');
+      setLicenses(res.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLicenses();
+  }, []);
+
   const filtered = licenses.filter(l => {
     const q = search.toLowerCase();
-    const matchQ    = !q || l.softwareName.toLowerCase().includes(q) || l.vendor.toLowerCase().includes(q);
+    const matchQ    = !q || l.software_name.toLowerCase().includes(q) || l.vendor.toLowerCase().includes(q);
     const matchStat = filterStatus === 'all' || l.status      === filterStatus;
-    const matchType = filterType   === 'all' || l.licenseType === filterType;
+    const matchType = filterType   === 'all' || l.license_type === filterType;
     return matchQ && matchStat && matchType;
   });
 
@@ -37,28 +55,43 @@ const SoftwareLicenses: React.FC = () => {
   const openEdit = (l: SoftwareLicense) => { setEditing(l); setForm({ ...l }); setShowModal(true); };
   const closeModal = () => { setShowModal(false); setEditing(null); };
 
-  const handleSave = () => {
-    if (!form.softwareName || !form.vendor) return;
-    if (editing) {
-      setLicenses(prev => prev.map(l => l.id === editing.id ? { ...editing, ...form } as SoftwareLicense : l));
-    } else {
-      const newL: SoftwareLicense = {
-        ...form as SoftwareLicense,
-        id: `LIC-${String(licenses.length + 1).padStart(3, '0')}`,
-      };
-      setLicenses(prev => [newL, ...prev]);
+  const handleSave = async () => {
+    if (!form.software_name || !form.vendor) return;
+    try {
+      if (editing) {
+        const res = await api.put(`/it/licenses/${editing.id}/`, form);
+        setLicenses(prev => prev.map(l => l.id === editing.id ? res.data : l));
+      } else {
+        const payload = {
+          ...form,
+          id: `LIC-${String(licenses.length + 1).padStart(3, '0')}`,
+        };
+        const res = await api.post('/it/licenses/', payload);
+        setLicenses(prev => [res.data, ...prev]);
+      }
+      closeModal();
+    } catch (e) {
+      console.error(e);
+      alert('Error saving license');
     }
-    closeModal();
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Remove this software license?')) setLicenses(prev => prev.filter(l => l.id !== id));
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Remove this software license?')) {
+      try {
+        await api.delete(`/it/licenses/${id}/`);
+        setLicenses(prev => prev.filter(l => l.id !== id));
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
   const f = (field: keyof SoftwareLicense) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-      const val = ['seatsTotal', 'seatsUsed', 'cost'].includes(field)
-        ? Number(e.target.value) : e.target.value;
+      let val: string | number | null = e.target.value;
+      if (['seats_total', 'seats_used', 'cost'].includes(field)) val = Number(val);
+      if ((field === 'purchase_date' || field === 'expiry_date') && val === '') val = null;
       setForm(prev => ({ ...prev, [field]: val }));
     };
 
@@ -73,7 +106,9 @@ const SoftwareLicenses: React.FC = () => {
   const active      = licenses.filter(l => l.status === 'active').length;
   const expiringSoon = licenses.filter(l => l.status === 'expiring-soon').length;
   const expired     = licenses.filter(l => l.status === 'expired').length;
-  const totalCost   = licenses.reduce((s, l) => s + l.cost, 0);
+  const totalCost   = licenses.reduce((s, l) => s + Number(l.cost), 0);
+
+  if (loading) return <div className="p-5 text-center"><div className="spinner-border text-primary"></div></div>;
 
   return (
     <div>
@@ -134,18 +169,18 @@ const SoftwareLicenses: React.FC = () => {
             <i className="fas fa-key fa-2x d-block mb-2" style={{ color: '#cbd5e1' }}></i>No licenses found.
           </div>
         ) : filtered.map(l => {
-          const pct = l.seatsTotal === 0 ? 0 : Math.round((l.seatsUsed / l.seatsTotal) * 100);
-          const seatColor = getSeatColor(l.seatsUsed, l.seatsTotal);
+          const pct = l.seats_total === 0 ? 0 : Math.round((l.seats_used / l.seats_total) * 100);
+          const seatColor = getSeatColor(l.seats_used, l.seats_total);
           return (
             <div key={l.id} className="col-md-6 col-xl-4">
               <div className="it-card h-100">
                 <div className="d-flex align-items-start justify-content-between mb-3">
                   <div className="d-flex align-items-center gap-3">
-                    <div className={`it-icon-box ${TYPE_COLOR[l.licenseType]}`}>
+                    <div className={`it-icon-box ${TYPE_COLOR[l.license_type]}`}>
                       <i className="fas fa-key"></i>
                     </div>
                     <div>
-                      <div className="fw-bold">{l.softwareName}</div>
+                      <div className="fw-bold">{l.software_name}</div>
                       <div className="small text-muted">{l.vendor}</div>
                     </div>
                   </div>
@@ -154,15 +189,15 @@ const SoftwareLicenses: React.FC = () => {
 
                 {/* License key */}
                 <div className="rounded-2 p-2 mb-3" style={{ background: '#f8fafc', fontFamily: 'monospace', fontSize: '0.78rem', color: '#475569', wordBreak: 'break-all' }}>
-                  {l.licenseKey}
+                  {l.license_key || '—'}
                 </div>
 
                 {/* Seats bar */}
-                {l.licenseType !== 'open-source' && (
+                {l.license_type !== 'open-source' && (
                   <div className="mb-3">
                     <div className="d-flex justify-content-between small mb-1">
                       <span className="text-muted">Seats Used</span>
-                      <span className="fw-semibold">{l.seatsUsed} / {l.seatsTotal} ({pct}%)</span>
+                      <span className="fw-semibold">{l.seats_used} / {l.seats_total} ({pct}%)</span>
                     </div>
                     <div className="it-seat-bar">
                       <div className={`it-seat-bar-fill ${seatColor}`} style={{ width: `${pct}%` }} />
@@ -174,8 +209,8 @@ const SoftwareLicenses: React.FC = () => {
                 <div className="row g-2 small">
                   <div className="col-6">
                     <span className="text-muted d-block">Type</span>
-                    <span className={`it-badge ${TYPE_COLOR[l.licenseType]}`} style={{ background: 'transparent', border: '1.5px solid currentColor', fontSize: '0.72rem' }}>
-                      {l.licenseType}
+                    <span className={`it-badge ${TYPE_COLOR[l.license_type]}`} style={{ background: 'transparent', border: '1.5px solid currentColor', fontSize: '0.72rem' }}>
+                      {l.license_type}
                     </span>
                   </div>
                   <div className="col-6">
@@ -184,12 +219,12 @@ const SoftwareLicenses: React.FC = () => {
                   </div>
                   <div className="col-6">
                     <span className="text-muted d-block">Purchase</span>
-                    <span className="fw-medium">{formatDate(l.purchaseDate)}</span>
+                    <span className="fw-medium">{formatDate(l.purchase_date)}</span>
                   </div>
                   <div className="col-6">
                     <span className="text-muted d-block">Expiry</span>
                     <span className={`fw-medium ${l.status === 'expired' ? 'text-danger' : l.status === 'expiring-soon' ? 'text-warning' : ''}`}>
-                      {formatDate(l.expiryDate)}
+                      {formatDate(l.expiry_date)}
                     </span>
                   </div>
                 </div>
@@ -227,7 +262,7 @@ const SoftwareLicenses: React.FC = () => {
               <div className="modal-body row g-3 px-4 py-3">
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">Software Name *</label>
-                  <input className="form-control" value={form.softwareName || ''} onChange={f('softwareName')} placeholder="e.g. Microsoft 365" />
+                  <input className="form-control" value={form.software_name || ''} onChange={f('software_name')} placeholder="e.g. Microsoft 365" />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">Vendor *</label>
@@ -235,29 +270,29 @@ const SoftwareLicenses: React.FC = () => {
                 </div>
                 <div className="col-12">
                   <label className="form-label small fw-semibold">License Key</label>
-                  <input className="form-control font-monospace" value={form.licenseKey || ''} onChange={f('licenseKey')} placeholder="XXXX-XXXX-XXXX-XXXX" />
+                  <input className="form-control font-monospace" value={form.license_key || ''} onChange={f('license_key')} placeholder="XXXX-XXXX-XXXX-XXXX" />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">License Type</label>
-                  <select className="form-select" value={form.licenseType} onChange={f('licenseType')}>
+                  <select className="form-select" value={form.license_type} onChange={f('license_type')}>
                     {LICENSE_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
                   </select>
                 </div>
                 <div className="col-md-3">
                   <label className="form-label small fw-semibold">Total Seats</label>
-                  <input type="number" className="form-control" value={form.seatsTotal || 1} onChange={f('seatsTotal')} min={1} />
+                  <input type="number" className="form-control" value={form.seats_total || 1} onChange={f('seats_total')} min={1} />
                 </div>
                 <div className="col-md-3">
                   <label className="form-label small fw-semibold">Seats Used</label>
-                  <input type="number" className="form-control" value={form.seatsUsed || 0} onChange={f('seatsUsed')} min={0} />
+                  <input type="number" className="form-control" value={form.seats_used || 0} onChange={f('seats_used')} min={0} />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label small fw-semibold">Purchase Date</label>
-                  <input type="date" className="form-control" value={form.purchaseDate || ''} onChange={f('purchaseDate')} />
+                  <input type="date" className="form-control" value={form.purchase_date || ''} onChange={f('purchase_date')} />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label small fw-semibold">Expiry Date</label>
-                  <input type="date" className="form-control" value={form.expiryDate === '—' ? '' : (form.expiryDate || '')} onChange={f('expiryDate')} />
+                  <input type="date" className="form-control" value={form.expiry_date || ''} onChange={f('expiry_date')} />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label small fw-semibold">Annual Cost (TZS)</label>

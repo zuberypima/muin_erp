@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../api/axiosConfig';
 import {
   ITAsset, AssetCategory, AssetStatus, AssetCondition,
-  demoAssets, formatCurrency, formatDate, ASSET_CATEGORIES,
+  formatCurrency, formatDate, ASSET_CATEGORIES,
 } from './itTypes';
 
 const CATEGORY_ICONS: Record<AssetCategory, string> = {
@@ -11,60 +12,93 @@ const CATEGORY_ICONS: Record<AssetCategory, string> = {
 };
 
 const emptyAsset = (): Partial<ITAsset> => ({
-  name: '', category: 'laptop', brand: '', model: '', serialNumber: '',
-  purchaseDate: '', purchasePrice: 0, assignedTo: '', location: '',
-  condition: 'good', status: 'active', warrantyExpiry: '', notes: '',
+  name: '', category: 'laptop', brand: '', model: '', serial_number: '',
+  purchase_date: null, purchase_price: 0, assigned_to: '', location: '',
+  condition: 'good', status: 'active', warranty_expiry: null, notes: '',
 });
 
 const ITAssets: React.FC = () => {
-  const [assets, setAssets]       = useState<ITAsset[]>(demoAssets);
+  const [assets, setAssets]       = useState<ITAsset[]>([]);
+  const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState('');
   const [filterCat, setFilterCat] = useState<string>('all');
   const [filterStat, setFilterStat] = useState<string>('all');
+  
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing]     = useState<ITAsset | null>(null);
   const [form, setForm]           = useState<Partial<ITAsset>>(emptyAsset());
   const [viewAsset, setViewAsset] = useState<ITAsset | null>(null);
 
-  // Filtering
+  const fetchAssets = async () => {
+    try {
+      const res = await api.get('/it/assets/');
+      setAssets(res.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAssets();
+  }, []);
+
   const filtered = assets.filter(a => {
     const q = search.toLowerCase();
     const matchQ = !q || a.name.toLowerCase().includes(q) || a.brand.toLowerCase().includes(q) ||
-      a.serialNumber.toLowerCase().includes(q) || a.assignedTo.toLowerCase().includes(q);
+      a.serial_number.toLowerCase().includes(q) || a.assigned_to.toLowerCase().includes(q);
     const matchCat  = filterCat  === 'all' || a.category === filterCat;
     const matchStat = filterStat === 'all' || a.status   === filterStat;
     return matchQ && matchCat && matchStat;
   });
 
-  // CRUD
   const openAdd  = () => { setEditing(null); setForm(emptyAsset()); setShowModal(true); };
   const openEdit = (a: ITAsset) => { setEditing(a); setForm({ ...a }); setShowModal(true); };
   const closeModal = () => { setShowModal(false); setEditing(null); };
 
-  const handleSave = () => {
-    if (!form.name || !form.serialNumber) return;
-    if (editing) {
-      setAssets(prev => prev.map(a => a.id === editing.id ? { ...editing, ...form } as ITAsset : a));
-    } else {
-      const newAsset: ITAsset = {
-        ...form as ITAsset,
-        id: `AST-${String(assets.length + 1).padStart(3, '0')}`,
-      };
-      setAssets(prev => [newAsset, ...prev]);
+  const handleSave = async () => {
+    if (!form.name || !form.serial_number) return;
+    try {
+      if (editing) {
+        const res = await api.put(`/it/assets/${editing.id}/`, form);
+        setAssets(prev => prev.map(a => a.id === editing.id ? res.data : a));
+      } else {
+        const payload = {
+          ...form,
+          id: `AST-${String(assets.length + 1).padStart(3, '0')}`,
+        };
+        const res = await api.post('/it/assets/', payload);
+        setAssets(prev => [res.data, ...prev]);
+      }
+      closeModal();
+    } catch (e) {
+      console.error(e);
+      alert('Error saving asset');
     }
-    closeModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Decommission this asset? This action cannot be undone.')) {
-      setAssets(prev => prev.filter(a => a.id !== id));
+      try {
+        await api.delete(`/it/assets/${id}/`);
+        setAssets(prev => prev.filter(a => a.id !== id));
+      } catch (e) {
+        console.error(e);
+      }
     }
   };
 
-  const f = (field: keyof ITAsset) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-    setForm(prev => ({ ...prev, [field]: field === 'purchasePrice' ? Number(e.target.value) : e.target.value }));
+  const f = (field: keyof ITAsset) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    let val: string | number | null = e.target.value;
+    if (field === 'purchase_price') val = Number(val);
+    if ((field === 'purchase_date' || field === 'warranty_expiry') && val === '') val = null;
+    setForm(prev => ({ ...prev, [field]: val }));
+  };
 
-  const totalValue = assets.reduce((s, a) => s + a.purchasePrice, 0);
+  const totalValue = assets.reduce((s, a) => s + Number(a.purchase_price), 0);
+
+  if (loading) return <div className="p-5 text-center"><div className="spinner-border text-primary"></div></div>;
 
   return (
     <div>
@@ -140,15 +174,15 @@ const ITAssets: React.FC = () => {
                     </div>
                   </td>
                   <td><span className="it-category-pill text-capitalize"><i className={`${CATEGORY_ICONS[a.category]} me-1`}></i>{a.category}</span></td>
-                  <td className="text-muted small font-monospace">{a.serialNumber}</td>
+                  <td className="text-muted small font-monospace">{a.serial_number}</td>
                   <td>
-                    <div className="small fw-medium">{a.assignedTo}</div>
+                    <div className="small fw-medium">{a.assigned_to || '—'}</div>
                     <div className="small text-muted">{a.location}</div>
                   </td>
-                  <td className="fw-medium small">{formatCurrency(a.purchasePrice)}</td>
+                  <td className="fw-medium small">{formatCurrency(a.purchase_price)}</td>
                   <td><span className={`it-badge ${a.condition}`}>{a.condition}</span></td>
                   <td><span className={`it-badge ${a.status}`}>{a.status.replace('-', ' ')}</span></td>
-                  <td className="small text-muted">{formatDate(a.warrantyExpiry)}</td>
+                  <td className="small text-muted">{formatDate(a.warranty_expiry)}</td>
                   <td>
                     <div className="d-flex gap-1">
                       <button className="btn btn-sm btn-light border" title="View" onClick={() => setViewAsset(a)}><i className="fas fa-eye text-primary"></i></button>
@@ -193,11 +227,11 @@ const ITAssets: React.FC = () => {
                 </div>
                 <div className="col-md-4">
                   <label className="form-label small fw-semibold">Serial Number *</label>
-                  <input className="form-control" value={form.serialNumber || ''} onChange={f('serialNumber')} placeholder="e.g. DL-00123" />
+                  <input className="form-control" value={form.serial_number || ''} onChange={f('serial_number')} placeholder="e.g. DL-00123" />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">Assigned To</label>
-                  <input className="form-control" value={form.assignedTo || ''} onChange={f('assignedTo')} placeholder="Employee name or Shared" />
+                  <input className="form-control" value={form.assigned_to || ''} onChange={f('assigned_to')} placeholder="Employee name or Shared" />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">Location</label>
@@ -205,15 +239,15 @@ const ITAssets: React.FC = () => {
                 </div>
                 <div className="col-md-4">
                   <label className="form-label small fw-semibold">Purchase Date</label>
-                  <input type="date" className="form-control" value={form.purchaseDate || ''} onChange={f('purchaseDate')} />
+                  <input type="date" className="form-control" value={form.purchase_date || ''} onChange={f('purchase_date')} />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label small fw-semibold">Purchase Price (TZS)</label>
-                  <input type="number" className="form-control" value={form.purchasePrice || ''} onChange={f('purchasePrice')} />
+                  <input type="number" className="form-control" value={form.purchase_price || ''} onChange={f('purchase_price')} />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label small fw-semibold">Warranty Expiry</label>
-                  <input type="date" className="form-control" value={form.warrantyExpiry || ''} onChange={f('warrantyExpiry')} />
+                  <input type="date" className="form-control" value={form.warranty_expiry || ''} onChange={f('warranty_expiry')} />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">Condition</label>
@@ -270,18 +304,18 @@ const ITAssets: React.FC = () => {
                 <div className="row g-2">
                   {[
                     { label: 'Asset ID', value: viewAsset.id },
-                    { label: 'Serial No.', value: viewAsset.serialNumber },
+                    { label: 'Serial No.', value: viewAsset.serial_number },
                     { label: 'Category', value: viewAsset.category },
                     { label: 'Condition', value: viewAsset.condition },
-                    { label: 'Assigned To', value: viewAsset.assignedTo },
+                    { label: 'Assigned To', value: viewAsset.assigned_to },
                     { label: 'Location', value: viewAsset.location },
-                    { label: 'Purchase Date', value: formatDate(viewAsset.purchaseDate) },
-                    { label: 'Purchase Price', value: formatCurrency(viewAsset.purchasePrice) },
-                    { label: 'Warranty Expiry', value: formatDate(viewAsset.warrantyExpiry) },
+                    { label: 'Purchase Date', value: formatDate(viewAsset.purchase_date) },
+                    { label: 'Purchase Price', value: formatCurrency(viewAsset.purchase_price) },
+                    { label: 'Warranty Expiry', value: formatDate(viewAsset.warranty_expiry) },
                   ].map(item => (
                     <div key={item.label} className="col-6">
                       <div className="small text-muted">{item.label}</div>
-                      <div className="fw-medium text-capitalize">{item.value}</div>
+                      <div className="fw-medium text-capitalize">{item.value || '—'}</div>
                     </div>
                   ))}
                   {viewAsset.notes && (

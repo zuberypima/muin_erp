@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../api/axiosConfig';
 import {
   SupportTicket, TicketCategory, TicketPriority, TicketStatus,
-  demoTickets, formatDateTime,
+  formatDateTime,
 } from './itTypes';
 
 const CATEGORIES: TicketCategory[] = ['hardware', 'software', 'network', 'account', 'other'];
@@ -10,8 +11,7 @@ const STAFFERS = ['Grace Mwangi', 'External — TechFix Ltd', 'Unassigned'];
 
 const emptyTicket = (): Partial<SupportTicket> => ({
   title: '', description: '', category: 'software', priority: 'medium',
-  raisedBy: '', assignedTo: '', status: 'open',
-  createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+  raised_by: '', assigned_to: '', status: 'open',
 });
 
 const PRIORITY_ICON: Record<TicketPriority, string> = {
@@ -19,19 +19,36 @@ const PRIORITY_ICON: Record<TicketPriority, string> = {
 };
 
 const SupportTickets: React.FC = () => {
-  const [tickets, setTickets]         = useState<SupportTicket[]>(demoTickets);
+  const [tickets, setTickets]         = useState<SupportTicket[]>([]);
+  const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [filterCat, setFilterCat]     = useState<string>('all');
+  
   const [showModal, setShowModal]     = useState(false);
   const [editing, setEditing]         = useState<SupportTicket | null>(null);
   const [viewTicket, setViewTicket]   = useState<SupportTicket | null>(null);
   const [form, setForm]               = useState<Partial<SupportTicket>>(emptyTicket());
 
+  const fetchTickets = async () => {
+    try {
+      const res = await api.get('/it/tickets/');
+      setTickets(res.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+
   const filtered = tickets.filter(t => {
     const q = search.toLowerCase();
-    const matchQ    = !q || t.title.toLowerCase().includes(q) || t.raisedBy.toLowerCase().includes(q) || t.id.toLowerCase().includes(q);
+    const matchQ    = !q || t.title.toLowerCase().includes(q) || t.raised_by.toLowerCase().includes(q) || t.id.toLowerCase().includes(q);
     const matchStat = filterStatus   === 'all' || t.status   === filterStatus;
     const matchPri  = filterPriority === 'all' || t.priority === filterPriority;
     const matchCat  = filterCat      === 'all' || t.category === filterCat;
@@ -42,33 +59,50 @@ const SupportTickets: React.FC = () => {
   const openEdit = (t: SupportTicket) => { setEditing(t); setForm({ ...t }); setShowModal(true); };
   const closeModal = () => { setShowModal(false); setEditing(null); };
 
-  const handleSave = () => {
-    if (!form.title || !form.raisedBy) return;
-    if (editing) {
-      setTickets(prev => prev.map(t => t.id === editing.id ? { ...editing, ...form, updatedAt: new Date().toISOString() } as SupportTicket : t));
-    } else {
-      const newT: SupportTicket = {
-        ...form as SupportTicket,
-        id: `TKT-${String(tickets.length + 1).padStart(3, '0')}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setTickets(prev => [newT, ...prev]);
+  const handleSave = async () => {
+    if (!form.title || !form.raised_by) return;
+    try {
+      if (editing) {
+        const res = await api.put(`/it/tickets/${editing.id}/`, form);
+        setTickets(prev => prev.map(t => t.id === editing.id ? res.data : t));
+      } else {
+        const payload = {
+          ...form,
+          id: `TKT-${String(tickets.length + 1).padStart(3, '0')}`,
+        };
+        const res = await api.post('/it/tickets/', payload);
+        setTickets(prev => [res.data, ...prev]);
+      }
+      closeModal();
+    } catch (e) {
+      console.error(e);
+      alert('Error saving ticket');
     }
-    closeModal();
   };
 
-  const cycleStatus = (id: string) => {
+  const cycleStatus = async (id: string) => {
+    const t = tickets.find(x => x.id === id);
+    if (!t) return;
     const order: TicketStatus[] = ['open', 'in-progress', 'resolved', 'closed'];
-    setTickets(prev => prev.map(t => {
-      if (t.id !== id) return t;
-      const nextIdx = (order.indexOf(t.status) + 1) % order.length;
-      return { ...t, status: order[nextIdx], updatedAt: new Date().toISOString() };
-    }));
+    const nextIdx = (order.indexOf(t.status) + 1) % order.length;
+    const nextStatus = order[nextIdx];
+    try {
+      const res = await api.patch(`/it/tickets/${id}/`, { status: nextStatus, resolved_at: (nextStatus === 'resolved' || nextStatus === 'closed') ? new Date().toISOString() : null });
+      setTickets(prev => prev.map(tk => tk.id === id ? res.data : tk));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Delete this ticket?')) setTickets(prev => prev.filter(t => t.id !== id));
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Delete this ticket?')) {
+      try {
+        await api.delete(`/it/tickets/${id}/`);
+        setTickets(prev => prev.filter(t => t.id !== id));
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
   const f = (field: keyof SupportTicket) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -79,6 +113,8 @@ const SupportTickets: React.FC = () => {
   const inProgress = tickets.filter(t => t.status === 'in-progress').length;
   const resolved   = tickets.filter(t => t.status === 'resolved' || t.status === 'closed').length;
   const critical   = tickets.filter(t => t.priority === 'critical' && t.status !== 'resolved' && t.status !== 'closed').length;
+
+  if (loading) return <div className="p-5 text-center"><div className="spinner-border text-primary"></div></div>;
 
   return (
     <div>
@@ -157,10 +193,10 @@ const SupportTickets: React.FC = () => {
                       <i className={PRIORITY_ICON[t.priority]}></i> {t.priority}
                     </span>
                   </td>
-                  <td className="small">{t.raisedBy}</td>
-                  <td className="small">{t.assignedTo || <span className="text-muted">Unassigned</span>}</td>
+                  <td className="small">{t.raised_by}</td>
+                  <td className="small">{t.assigned_to || <span className="text-muted">Unassigned</span>}</td>
                   <td><span className={`it-badge ${t.status}`}>{t.status.replace('-', ' ')}</span></td>
-                  <td className="small text-muted">{formatDateTime(t.createdAt)}</td>
+                  <td className="small text-muted">{formatDateTime(t.created_at)}</td>
                   <td>
                     <div className="d-flex gap-1">
                       <button className="btn btn-sm btn-light border" title="View" onClick={() => setViewTicket(t)}><i className="fas fa-eye text-primary"></i></button>
@@ -208,11 +244,11 @@ const SupportTickets: React.FC = () => {
                 </div>
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">Raised By *</label>
-                  <input className="form-control" value={form.raisedBy || ''} onChange={f('raisedBy')} placeholder="Employee name" />
+                  <input className="form-control" value={form.raised_by || ''} onChange={f('raised_by')} placeholder="Employee name" />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">Assigned To</label>
-                  <select className="form-select" value={form.assignedTo || ''} onChange={f('assignedTo')}>
+                  <select className="form-select" value={form.assigned_to || ''} onChange={f('assigned_to')}>
                     <option value="">Unassigned</option>
                     {STAFFERS.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
@@ -258,11 +294,11 @@ const SupportTickets: React.FC = () => {
                 <p className="mb-4" style={{ lineHeight: 1.7 }}>{viewTicket.description}</p>
                 <div className="row g-3">
                   {[
-                    { label: 'Raised By',    value: viewTicket.raisedBy },
-                    { label: 'Assigned To',  value: viewTicket.assignedTo || 'Unassigned' },
-                    { label: 'Created',      value: formatDateTime(viewTicket.createdAt) },
-                    { label: 'Last Updated', value: formatDateTime(viewTicket.updatedAt) },
-                    { label: 'Resolved At',  value: viewTicket.resolvedAt ? formatDateTime(viewTicket.resolvedAt) : '—' },
+                    { label: 'Raised By',    value: viewTicket.raised_by },
+                    { label: 'Assigned To',  value: viewTicket.assigned_to || 'Unassigned' },
+                    { label: 'Created',      value: formatDateTime(viewTicket.created_at) },
+                    { label: 'Last Updated', value: formatDateTime(viewTicket.updated_at) },
+                    { label: 'Resolved At',  value: viewTicket.resolved_at ? formatDateTime(viewTicket.resolved_at) : '—' },
                   ].map(item => (
                     <div key={item.label} className="col-md-4">
                       <div className="small text-muted">{item.label}</div>

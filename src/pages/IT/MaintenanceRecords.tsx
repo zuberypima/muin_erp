@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../api/axiosConfig';
 import {
-  MaintenanceRecord, MaintenanceType, MaintenanceStatus,
-  demoMaintenance, demoAssets, formatCurrency, formatDate,
+  MaintenanceRecord, MaintenanceType, MaintenanceStatus, ITAsset,
+  formatCurrency, formatDate,
 } from './itTypes';
 
 const TYPES: MaintenanceType[]    = ['preventive', 'corrective', 'upgrade', 'inspection'];
@@ -9,9 +10,9 @@ const STATUSES: MaintenanceStatus[] = ['scheduled', 'in-progress', 'completed', 
 const TECHNICIANS = ['Grace Mwangi', 'External — TechFix Ltd', 'External — NetPro Solutions'];
 
 const emptyRecord = (): Partial<MaintenanceRecord> => ({
-  assetId: demoAssets[0].id, assetName: demoAssets[0].name,
-  type: 'preventive', description: '', performedBy: 'Grace Mwangi',
-  cost: 0, scheduledDate: '', completedDate: '', nextMaintenanceDate: '', status: 'scheduled',
+  asset_id: '', asset_name: '',
+  type: 'preventive', description: '', performed_by: 'Grace Mwangi',
+  cost: 0, scheduled_date: null, completed_date: null, next_maintenance_date: null, status: 'scheduled',
 });
 
 const TYPE_ICON: Record<MaintenanceType, string> = {
@@ -23,52 +24,101 @@ const TYPE_COLOR: Record<MaintenanceType, string> = {
 };
 
 const MaintenanceRecords: React.FC = () => {
-  const [records, setRecords]         = useState<MaintenanceRecord[]>(demoMaintenance);
+  const [records, setRecords]         = useState<MaintenanceRecord[]>([]);
+  const [assets, setAssets]           = useState<ITAsset[]>([]);
+  const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterType, setFilterType]   = useState<string>('all');
+  
   const [showModal, setShowModal]     = useState(false);
   const [editing, setEditing]         = useState<MaintenanceRecord | null>(null);
   const [form, setForm]               = useState<Partial<MaintenanceRecord>>(emptyRecord());
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [recRes, astRes] = await Promise.all([
+          api.get('/it/maintenance/'),
+          api.get('/it/assets/')
+        ]);
+        setRecords(recRes.data);
+        setAssets(astRes.data);
+        if (astRes.data.length > 0) {
+          emptyRecord().asset_id = astRes.data[0].id;
+          emptyRecord().asset_name = astRes.data[0].name;
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const filtered = records.filter(r => {
     const q = search.toLowerCase();
-    const matchQ    = !q || r.assetName.toLowerCase().includes(q) || r.performedBy.toLowerCase().includes(q) || r.description.toLowerCase().includes(q);
+    const matchQ    = !q || r.asset_name.toLowerCase().includes(q) || r.performed_by.toLowerCase().includes(q) || r.description.toLowerCase().includes(q);
     const matchStat = filterStatus === 'all' || r.status === filterStatus;
     const matchType = filterType   === 'all' || r.type   === filterType;
     return matchQ && matchStat && matchType;
   });
 
-  const openAdd  = () => { setEditing(null); setForm(emptyRecord()); setShowModal(true); };
+  const openAdd  = () => { 
+    setEditing(null); 
+    const r = emptyRecord();
+    if (assets.length > 0) {
+        r.asset_id = assets[0].id;
+        r.asset_name = assets[0].name;
+    }
+    setForm(r); 
+    setShowModal(true); 
+  };
   const openEdit = (r: MaintenanceRecord) => { setEditing(r); setForm({ ...r }); setShowModal(true); };
   const closeModal = () => { setShowModal(false); setEditing(null); };
 
-  const handleSave = () => {
-    if (!form.assetId || !form.scheduledDate) return;
-    if (editing) {
-      setRecords(prev => prev.map(r => r.id === editing.id ? { ...editing, ...form } as MaintenanceRecord : r));
-    } else {
-      const newR: MaintenanceRecord = {
-        ...form as MaintenanceRecord,
-        id: `MNT-${String(records.length + 1).padStart(3, '0')}`,
-      };
-      setRecords(prev => [newR, ...prev]);
+  const handleSave = async () => {
+    if (!form.asset_id || !form.scheduled_date) return;
+    try {
+      if (editing) {
+        const res = await api.put(`/it/maintenance/${editing.id}/`, form);
+        setRecords(prev => prev.map(r => r.id === editing.id ? res.data : r));
+      } else {
+        const payload = {
+          ...form,
+          id: `MNT-${String(records.length + 1).padStart(3, '0')}`,
+        };
+        const res = await api.post('/it/maintenance/', payload);
+        setRecords(prev => [res.data, ...prev]);
+      }
+      closeModal();
+    } catch (e) {
+      console.error(e);
+      alert('Error saving maintenance record');
     }
-    closeModal();
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Delete this maintenance record?')) setRecords(prev => prev.filter(r => r.id !== id));
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Delete this maintenance record?')) {
+      try {
+        await api.delete(`/it/maintenance/${id}/`);
+        setRecords(prev => prev.filter(r => r.id !== id));
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
   const f = (field: keyof MaintenanceRecord) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-      let val: string | number = e.target.value;
+      let val: string | number | null = e.target.value;
       if (field === 'cost') val = Number(e.target.value);
-      // If asset changes, also update assetName
-      if (field === 'assetId') {
-        const asset = demoAssets.find(a => a.id === e.target.value);
-        setForm(prev => ({ ...prev, assetId: e.target.value, assetName: asset?.name || '' }));
+      if ((field === 'scheduled_date' || field === 'completed_date' || field === 'next_maintenance_date') && val === '') val = null;
+      // If asset changes, also update asset_name
+      if (field === 'asset_id') {
+        const asset = assets.find(a => a.id === e.target.value);
+        setForm(prev => ({ ...prev, asset_id: e.target.value, asset_name: asset?.name || '' }));
         return;
       }
       setForm(prev => ({ ...prev, [field]: val }));
@@ -77,7 +127,9 @@ const MaintenanceRecords: React.FC = () => {
   const scheduled  = records.filter(r => r.status === 'scheduled').length;
   const inProgress = records.filter(r => r.status === 'in-progress').length;
   const completed  = records.filter(r => r.status === 'completed').length;
-  const totalCost  = records.filter(r => r.status === 'completed').reduce((s, r) => s + r.cost, 0);
+  const totalCost  = records.filter(r => r.status === 'completed').reduce((s, r) => s + Number(r.cost), 0);
+
+  if (loading) return <div className="p-5 text-center"><div className="spinner-border text-primary"></div></div>;
 
   return (
     <div>
@@ -141,7 +193,7 @@ const MaintenanceRecords: React.FC = () => {
               ) : filtered.map(r => (
                 <tr key={r.id}>
                   <td className="small text-muted font-monospace">{r.id}</td>
-                  <td className="fw-medium small">{r.assetName}</td>
+                  <td className="fw-medium small">{r.asset_name}</td>
                   <td>
                     <span className={`it-badge ${TYPE_COLOR[r.type]}`} style={{ background: 'transparent', border: '1.5px solid currentColor' }}>
                       <i className={TYPE_ICON[r.type]}></i> {r.type}
@@ -150,9 +202,9 @@ const MaintenanceRecords: React.FC = () => {
                   <td style={{ maxWidth: '200px' }}>
                     <div className="small" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.description}</div>
                   </td>
-                  <td className="small">{r.performedBy}</td>
-                  <td className="small text-muted">{formatDate(r.scheduledDate)}</td>
-                  <td className="small text-muted">{r.completedDate ? formatDate(r.completedDate) : '—'}</td>
+                  <td className="small">{r.performed_by}</td>
+                  <td className="small text-muted">{formatDate(r.scheduled_date)}</td>
+                  <td className="small text-muted">{r.completed_date ? formatDate(r.completed_date) : '—'}</td>
                   <td className="small fw-medium">{r.cost > 0 ? formatCurrency(r.cost) : <span className="text-muted">Free</span>}</td>
                   <td><span className={`it-badge ${r.status}`}>{r.status.replace('-', ' ')}</span></td>
                   <td>
@@ -180,8 +232,8 @@ const MaintenanceRecords: React.FC = () => {
               <div className="modal-body row g-3 px-4 py-3">
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">Asset *</label>
-                  <select className="form-select" value={form.assetId} onChange={f('assetId')}>
-                    {demoAssets.map(a => <option key={a.id} value={a.id}>{a.name} ({a.id})</option>)}
+                  <select className="form-select" value={form.asset_id} onChange={f('asset_id')}>
+                    {assets.map(a => <option key={a.id} value={a.id}>{a.name} ({a.id})</option>)}
                   </select>
                 </div>
                 <div className="col-md-6">
@@ -196,7 +248,7 @@ const MaintenanceRecords: React.FC = () => {
                 </div>
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">Performed By</label>
-                  <select className="form-select" value={form.performedBy} onChange={f('performedBy')}>
+                  <select className="form-select" value={form.performed_by} onChange={f('performed_by')}>
                     {TECHNICIANS.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
@@ -206,15 +258,15 @@ const MaintenanceRecords: React.FC = () => {
                 </div>
                 <div className="col-md-4">
                   <label className="form-label small fw-semibold">Scheduled Date *</label>
-                  <input type="date" className="form-control" value={form.scheduledDate || ''} onChange={f('scheduledDate')} />
+                  <input type="date" className="form-control" value={form.scheduled_date || ''} onChange={f('scheduled_date')} />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label small fw-semibold">Completed Date</label>
-                  <input type="date" className="form-control" value={form.completedDate || ''} onChange={f('completedDate')} />
+                  <input type="date" className="form-control" value={form.completed_date || ''} onChange={f('completed_date')} />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label small fw-semibold">Next Maintenance Date</label>
-                  <input type="date" className="form-control" value={form.nextMaintenanceDate || ''} onChange={f('nextMaintenanceDate')} />
+                  <input type="date" className="form-control" value={form.next_maintenance_date || ''} onChange={f('next_maintenance_date')} />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">Status</label>

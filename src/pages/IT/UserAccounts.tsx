@@ -1,29 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../api/axiosConfig';
 import {
   UserAccount, AccountStatus, AccountRole,
-  demoAccounts, formatDateTime, DEPARTMENTS, SYSTEMS,
+  formatDateTime, DEPARTMENTS, SYSTEMS,
 } from './itTypes';
 
 const ROLES: AccountRole[] = ['Super Admin', 'Admin', 'Manager', 'Staff', 'Viewer'];
 
 const emptyAccount = (): Partial<UserAccount> => ({
-  username: '', fullName: '', email: '', role: 'Staff', department: 'IT',
-  systemAccess: [], status: 'active', mfaEnabled: false,
-  createdAt: new Date().toISOString().split('T')[0], lastLogin: '',
+  username: '', full_name: '', email: '', role: 'Staff', department: 'IT',
+  system_access: [], status: 'active', mfa_enabled: false,
+  created_at: new Date().toISOString().split('T')[0], last_login: null,
 });
 
 const UserAccounts: React.FC = () => {
-  const [accounts, setAccounts]     = useState<UserAccount[]>(demoAccounts);
+  const [accounts, setAccounts]     = useState<UserAccount[]>([]);
+  const [loading, setLoading]       = useState(true);
   const [search, setSearch]         = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterRole, setFilterRole] = useState<string>('all');
+  
   const [showModal, setShowModal]   = useState(false);
   const [editing, setEditing]       = useState<UserAccount | null>(null);
   const [form, setForm]             = useState<Partial<UserAccount>>(emptyAccount());
 
+  const fetchAccounts = async () => {
+    try {
+      const res = await api.get('/it/users/');
+      setAccounts(res.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
+
   const filtered = accounts.filter(a => {
     const q = search.toLowerCase();
-    const matchQ    = !q || a.fullName.toLowerCase().includes(q) || a.username.toLowerCase().includes(q) || a.email.toLowerCase().includes(q) || a.department.toLowerCase().includes(q);
+    const matchQ    = !q || a.full_name.toLowerCase().includes(q) || a.username.toLowerCase().includes(q) || a.email.toLowerCase().includes(q) || a.department.toLowerCase().includes(q);
     const matchStat = filterStatus === 'all' || a.status === filterStatus;
     const matchRole = filterRole   === 'all' || a.role   === filterRole;
     return matchQ && matchStat && matchRole;
@@ -33,44 +51,60 @@ const UserAccounts: React.FC = () => {
   const openEdit = (a: UserAccount) => { setEditing(a); setForm({ ...a }); setShowModal(true); };
   const closeModal = () => { setShowModal(false); setEditing(null); };
 
-  const handleSave = () => {
-    if (!form.username || !form.fullName || !form.email) return;
-    if (editing) {
-      setAccounts(prev => prev.map(a => a.id === editing.id ? { ...editing, ...form } as UserAccount : a));
-    } else {
-      const newAcc: UserAccount = {
-        ...form as UserAccount,
-        id: `USR-${String(accounts.length + 1).padStart(3, '0')}`,
-        systemAccess: form.systemAccess || [],
-        lastLogin: '',
-      };
-      setAccounts(prev => [newAcc, ...prev]);
+  const handleSave = async () => {
+    if (!form.username || !form.full_name || !form.email) return;
+    try {
+      if (editing) {
+        const res = await api.put(`/it/users/${editing.id}/`, form);
+        setAccounts(prev => prev.map(a => a.id === editing.id ? res.data : a));
+      } else {
+        const payload = {
+          ...form,
+          id: `USR-${String(accounts.length + 1).padStart(3, '0')}`,
+        };
+        const res = await api.post('/it/users/', payload);
+        setAccounts(prev => [res.data, ...prev]);
+      }
+      closeModal();
+    } catch (e) {
+      console.error(e);
+      alert('Error saving account');
     }
-    closeModal();
   };
 
-  const toggleStatus = (id: string) => {
-    setAccounts(prev => prev.map(a => {
-      if (a.id !== id) return a;
-      const next: AccountStatus = a.status === 'active' ? 'suspended' : 'active';
-      return { ...a, status: next };
-    }));
+  const toggleStatus = async (id: string) => {
+    const acc = accounts.find(a => a.id === id);
+    if (!acc) return;
+    const next: AccountStatus = acc.status === 'active' ? 'suspended' : 'active';
+    try {
+      const res = await api.patch(`/it/users/${id}/`, { status: next });
+      setAccounts(prev => prev.map(a => a.id === id ? res.data : a));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Delete this user account?')) setAccounts(prev => prev.filter(a => a.id !== id));
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Delete this user account?')) {
+      try {
+        await api.delete(`/it/users/${id}/`);
+        setAccounts(prev => prev.filter(a => a.id !== id));
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
   const toggleAccess = (sys: string) => {
-    const current = form.systemAccess || [];
+    const current = form.system_access || [];
     setForm(prev => ({
       ...prev,
-      systemAccess: current.includes(sys) ? current.filter(s => s !== sys) : [...current, sys],
+      system_access: current.includes(sys) ? current.filter(s => s !== sys) : [...current, sys],
     }));
   };
 
   const f = (field: keyof UserAccount) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const val = field === 'mfaEnabled' ? (e.target as HTMLInputElement).checked : e.target.value;
+    const val = field === 'mfa_enabled' ? (e.target as HTMLInputElement).checked : e.target.value;
     setForm(prev => ({ ...prev, [field]: val }));
   };
 
@@ -80,7 +114,9 @@ const UserAccounts: React.FC = () => {
 
   const activeCount   = accounts.filter(a => a.status === 'active').length;
   const suspended     = accounts.filter(a => a.status === 'suspended').length;
-  const mfaCount      = accounts.filter(a => a.mfaEnabled).length;
+  const mfaCount      = accounts.filter(a => a.mfa_enabled).length;
+
+  if (loading) return <div className="p-5 text-center"><div className="spinner-border text-primary"></div></div>;
 
   return (
     <div>
@@ -146,10 +182,10 @@ const UserAccounts: React.FC = () => {
                   <td>
                     <div className="d-flex align-items-center gap-2">
                       <div className="it-asset-icon" style={{ borderRadius: '50%', background: '#eef2ff', color: '#4f46e5', border: '1px solid #c7d2fe' }}>
-                        {a.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        {a.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <div className="fw-medium">{a.fullName}</div>
+                        <div className="fw-medium">{a.full_name}</div>
                         <div className="small text-muted">{a.username}</div>
                         <div className="small text-muted">{a.email}</div>
                       </div>
@@ -163,18 +199,18 @@ const UserAccounts: React.FC = () => {
                   <td className="small">{a.department}</td>
                   <td>
                     <div className="d-flex flex-wrap gap-1" style={{ maxWidth: '180px' }}>
-                      {a.systemAccess.slice(0, 3).map(s => (
+                      {(a.system_access || []).slice(0, 3).map(s => (
                         <span key={s} className="it-category-pill" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{s}</span>
                       ))}
-                      {a.systemAccess.length > 3 && <span className="small text-muted">+{a.systemAccess.length - 3}</span>}
+                      {(a.system_access || []).length > 3 && <span className="small text-muted">+{(a.system_access || []).length - 3}</span>}
                     </div>
                   </td>
                   <td>
-                    {a.mfaEnabled
+                    {a.mfa_enabled
                       ? <span className="it-badge active"><i className="fas fa-shield-alt"></i> On</span>
                       : <span className="it-badge suspended"><i className="fas fa-shield"></i> Off</span>}
                   </td>
-                  <td className="small text-muted">{a.lastLogin ? formatDateTime(a.lastLogin) : 'Never'}</td>
+                  <td className="small text-muted">{a.last_login ? formatDateTime(a.last_login) : 'Never'}</td>
                   <td><span className={`it-badge ${a.status}`}>{a.status}</span></td>
                   <td>
                     <div className="d-flex gap-1">
@@ -204,7 +240,7 @@ const UserAccounts: React.FC = () => {
               <div className="modal-body row g-3 px-4 py-3">
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">Full Name *</label>
-                  <input className="form-control" value={form.fullName || ''} onChange={f('fullName')} placeholder="e.g. Grace Mwangi" />
+                  <input className="form-control" value={form.full_name || ''} onChange={f('full_name')} placeholder="e.g. Grace Mwangi" />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">Username *</label>
@@ -242,14 +278,14 @@ const UserAccounts: React.FC = () => {
                         className="it-category-pill"
                         style={{
                           cursor: 'pointer',
-                          background: (form.systemAccess || []).includes(sys) ? '#eff6ff' : '#f1f5f9',
-                          color: (form.systemAccess || []).includes(sys) ? '#2563eb' : '#475569',
-                          border: (form.systemAccess || []).includes(sys) ? '1.5px solid #bfdbfe' : '1.5px solid transparent',
+                          background: (form.system_access || []).includes(sys) ? '#eff6ff' : '#f1f5f9',
+                          color: (form.system_access || []).includes(sys) ? '#2563eb' : '#475569',
+                          border: (form.system_access || []).includes(sys) ? '1.5px solid #bfdbfe' : '1.5px solid transparent',
                           userSelect: 'none',
                         }}
                         onClick={() => toggleAccess(sys)}
                       >
-                        {(form.systemAccess || []).includes(sys) && <i className="fas fa-check me-1"></i>}
+                        {(form.system_access || []).includes(sys) && <i className="fas fa-check me-1"></i>}
                         {sys}
                       </div>
                     ))}
@@ -258,8 +294,8 @@ const UserAccounts: React.FC = () => {
                 <div className="col-12">
                   <div className="form-check form-switch">
                     <input className="form-check-input" type="checkbox" id="mfaSwitch"
-                      checked={form.mfaEnabled || false}
-                      onChange={f('mfaEnabled')} />
+                      checked={form.mfa_enabled || false}
+                      onChange={f('mfa_enabled')} />
                     <label className="form-check-label small fw-semibold" htmlFor="mfaSwitch">
                       Enable Multi-Factor Authentication (MFA)
                     </label>
