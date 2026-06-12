@@ -8,6 +8,7 @@ interface User {
   email: string;
   is_staff?: boolean;
   department?: string | null;
+  employee_profile_id?: number | null;
 }
 
 interface AuthContextType {

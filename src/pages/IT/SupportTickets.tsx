@@ -8,7 +8,6 @@ import { useAuth } from '../../context/AuthContext';
 
 const CATEGORIES: TicketCategory[] = ['hardware', 'software', 'network', 'account', 'other'];
 const PRIORITIES: TicketPriority[] = ['low', 'medium', 'high', 'critical'];
-const STAFFERS = ['Grace Mwangi', 'External — TechFix Ltd', 'Unassigned'];
 
 const emptyTicket = (): Partial<SupportTicket> => ({
   title: '', description: '', category: 'software', priority: 'medium',
@@ -27,6 +26,7 @@ const SupportTickets: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [filterCat, setFilterCat]     = useState<string>('all');
+  const [itStaffers, setItStaffers]   = useState<string[]>([]);
   
   const [showModal, setShowModal]     = useState(false);
   const [editing, setEditing]         = useState<SupportTicket | null>(null);
@@ -44,8 +44,24 @@ const SupportTickets: React.FC = () => {
     }
   };
 
+  const fetchITStaff = async () => {
+    try {
+      const res = await api.get('/hr/employees/');
+      const staff = res.data
+        .filter((e: any) => e.department === 'IT')
+        .map((e: any) => `${e.first_name || e.firstName} ${e.last_name || e.lastName}`);
+      
+      // If no IT staff found, provide fallback
+      setItStaffers(staff.length > 0 ? staff : ['External — TechFix Ltd']);
+    } catch (e) {
+      console.error('Failed to fetch IT staff', e);
+      setItStaffers(['External — TechFix Ltd']);
+    }
+  };
+
   useEffect(() => {
     fetchTickets();
+    fetchITStaff();
   }, []);
 
   const filtered = tickets.filter(t => {
@@ -252,7 +268,7 @@ const SupportTickets: React.FC = () => {
                   <label className="form-label small fw-semibold">Assigned To</label>
                   <select className="form-select" value={form.assigned_to || ''} onChange={f('assigned_to')}>
                     <option value="">Unassigned</option>
-                    {STAFFERS.map(s => <option key={s} value={s}>{s}</option>)}
+                    {itStaffers.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div className="col-md-6">

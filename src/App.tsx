@@ -16,6 +16,7 @@ import Transactions from './pages/Finance/Transactions';
 import Budgets from './pages/Finance/Budgets';
 import Loans from './pages/Finance/Loans';
 import CashFlow from './pages/Finance/CashFlow';
+import SelfService from './pages/SelfService/SelfService';
 
 // HR Module
 import HRLayout from './pages/HR/HRLayout';
@@ -59,6 +60,7 @@ const App: React.FC = () => {
               <Route path="tasks/approvals" element={<RequestsInbox mode="approval" />} />
               <Route path="tasks/assist" element={<RequestsInbox mode="assist" />} />
               <Route path="erp-users" element={<ERPUsers />} />
+              <Route path="self-service" element={<SelfService />} />
               
               {/* Finance Module */}
               <Route path="finance" element={<FinanceLayout />}>

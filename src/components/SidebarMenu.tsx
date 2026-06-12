@@ -85,6 +85,12 @@ const SidebarMenu: React.FC = () => {
           )}
         </li>
 
+        <li className="nav-item">
+          <NavLink to="/self-service" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
+            <i className="fas fa-user-circle nav-icon"></i> Self Service Hub
+          </NavLink>
+        </li>
+
         {showUsers && (
           <li className="nav-item">
             <NavLink to="/erp-users" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
