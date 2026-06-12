@@ -7,6 +7,7 @@ interface User {
   username: string;
   email: string;
   is_staff?: boolean;
+  department?: string | null;
 }
 
 interface AuthContextType {

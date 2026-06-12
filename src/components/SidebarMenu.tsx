@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import './SidebarMenu.css';
 
 const SidebarMenu: React.FC = () => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -22,6 +22,15 @@ const SidebarMenu: React.FC = () => {
     logout();
     navigate('/login');
   };
+
+  const isSuperAdmin = user?.is_staff || user?.department === 'Management';
+  const dept = user?.department;
+
+  const showHR = isSuperAdmin || dept === 'HR';
+  const showFinance = isSuperAdmin || dept === 'Finance';
+  const showIT = isSuperAdmin || dept === 'IT';
+  const showProcurement = isSuperAdmin || dept === 'Logistics' || dept === 'Farm Operations';
+  const showUsers = isSuperAdmin || dept === 'HR' || dept === 'IT';
 
   return (
     <div id="side-menu" className="d-flex flex-column flex-shrink-0 p-4">
@@ -75,31 +84,46 @@ const SidebarMenu: React.FC = () => {
             </ul>
           )}
         </li>
-        <li className="nav-item">
-          <NavLink to="/erp-users" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
-            <i className="fas fa-user-tie nav-icon"></i> ERP Users
-          </NavLink>
-        </li>
-        <li className="nav-item">
-          <NavLink to="/finance" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
-            <i className="fas fa-chart-pie nav-icon"></i> Finance
-          </NavLink>
-        </li>
-        <li className="nav-item">
-          <NavLink to="/hr" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
-            <i className="fas fa-users-cog nav-icon"></i> HR Management
-          </NavLink>
-        </li>
-        <li className="nav-item">
-          <NavLink to="/procurement" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
-            <i className="fas fa-boxes nav-icon"></i> Procurement
-          </NavLink>
-        </li>
-        <li className="nav-item">
-          <NavLink to="/it" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
-            <i className="fas fa-server nav-icon"></i> IT Management
-          </NavLink>
-        </li>
+
+        {showUsers && (
+          <li className="nav-item">
+            <NavLink to="/erp-users" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
+              <i className="fas fa-user-tie nav-icon"></i> ERP Users
+            </NavLink>
+          </li>
+        )}
+
+        {showFinance && (
+          <li className="nav-item">
+            <NavLink to="/finance" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
+              <i className="fas fa-chart-pie nav-icon"></i> Finance
+            </NavLink>
+          </li>
+        )}
+
+        {showHR && (
+          <li className="nav-item">
+            <NavLink to="/hr" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
+              <i className="fas fa-users-cog nav-icon"></i> HR Management
+            </NavLink>
+          </li>
+        )}
+
+        {showProcurement && (
+          <li className="nav-item">
+            <NavLink to="/procurement" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
+              <i className="fas fa-boxes nav-icon"></i> Procurement
+            </NavLink>
+          </li>
+        )}
+
+        {showIT && (
+          <li className="nav-item">
+            <NavLink to="/it" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
+              <i className="fas fa-server nav-icon"></i> IT Management
+            </NavLink>
+          </li>
+        )}
         <li className="my-3"><hr className="sidebar-divider" /></li>
 
 
