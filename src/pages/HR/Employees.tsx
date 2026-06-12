@@ -57,11 +57,27 @@ const Employees: React.FC = () => {
   const handleUserSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const userId = e.target.value;
     const selectedUser = erpUsers.find(u => u.id.toString() === userId);
+    
+    let firstName = form.firstName;
+    let lastName = form.lastName;
+
+    if (selectedUser) {
+      if (selectedUser.first_name || selectedUser.last_name) {
+        firstName = selectedUser.first_name || '';
+        lastName = selectedUser.last_name || '';
+      } else {
+        const nameParts = selectedUser.username.split(' ');
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+      }
+    }
+
     setForm({
       ...form,
       user: userId,
       email: selectedUser ? selectedUser.email : form.email,
-      firstName: selectedUser ? selectedUser.username : form.firstName,
+      firstName,
+      lastName,
     });
   };
 
@@ -92,7 +108,13 @@ const Employees: React.FC = () => {
         status: 'active'
       });
     } catch (err: any) {
-      setError(err?.response?.data?.email?.[0] || 'Failed to add employee.');
+      const data = err?.response?.data;
+      if (data && typeof data === 'object') {
+        const msgs = Object.entries(data).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`);
+        setError(msgs.join(' | ') || 'Failed to add employee.');
+      } else {
+        setError('Failed to add employee.');
+      }
     } finally {
       setSaving(false);
     }
