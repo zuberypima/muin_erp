@@ -4,7 +4,7 @@ import AdminDashboard from './components/AdminDashboard';
 import ServicePage from './pages/ServicePage';
 import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import TaskBoard from './pages/Tasks/TaskBoard';
 import RequestsInbox from './pages/Tasks/RequestsInbox';
 import ERPUsers from './pages/ERPUsers.tsx';
@@ -46,6 +46,20 @@ import SupportTickets from './pages/IT/SupportTickets';
 import MaintenanceRecords from './pages/IT/MaintenanceRecords';
 import SoftwareLicenses from './pages/IT/SoftwareLicenses';
 
+const RootRedirect = () => {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.is_staff || user?.department === 'Management';
+  const dept = user?.department;
+
+  if (isSuperAdmin) return <Navigate to="/services" replace />;
+  if (dept === 'IT') return <Navigate to="/it" replace />;
+  if (dept === 'HR') return <Navigate to="/hr" replace />;
+  if (dept === 'Finance') return <Navigate to="/finance" replace />;
+  if (dept === 'Logistics' || dept === 'Farm Operations') return <Navigate to="/procurement" replace />;
+
+  return <Navigate to="/self-service" replace />;
+};
+
 const App: React.FC = () => {
   return (
     <AuthProvider>
@@ -54,7 +68,7 @@ const App: React.FC = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<AdminDashboard />}>
-              <Route index element={<Navigate to="/services" replace />} />
+              <Route index element={<RootRedirect />} />
               <Route path="services" element={<ServicePage />} />
               <Route path="tasks" element={<TaskBoard />} />
               <Route path="tasks/approvals" element={<RequestsInbox mode="approval" />} />

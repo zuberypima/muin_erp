@@ -37,11 +37,17 @@ const budgetStatus = [
 const ServicePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isSuperAdmin = user?.is_staff || user?.department === 'Management';
   const [tasks, setTasks] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isSuperAdmin) {
+      navigate('/self-service', { replace: true });
+      return;
+    }
+
     const fetchData = async () => {
       try {
         const [tasksRes, usersRes] = await Promise.all([
@@ -57,7 +63,9 @@ const ServicePage: React.FC = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [isSuperAdmin, navigate]);
+
+  if (!isSuperAdmin) return null;
 
   // Compute KPI values
   const totalEmployees = users.length;
