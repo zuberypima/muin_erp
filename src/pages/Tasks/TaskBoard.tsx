@@ -202,7 +202,7 @@ const TaskBoard: React.FC = () => {
       {loading ? (
         <div className="text-center py-5"><div className="spinner-border text-success"></div></div>
       ) : (
-        <div className="bg-white border rounded-4 shadow-sm overflow-hidden mb-4">
+        <div className="bg-white border rounded-4 shadow-sm mb-4">
           {filtered.length === 0 ? (
             <div className="text-center py-5 text-muted">
               <i className="fas fa-clipboard-check fa-3x mb-3 d-block text-light"></i>
@@ -210,17 +210,17 @@ const TaskBoard: React.FC = () => {
               <button className="btn btn-sm btn-outline-success" onClick={() => { setSearchTerm(''); setPriorityFilter('All'); setStatusFilter('All'); }}>Clear Filters</button>
             </div>
           ) : (
-            <div className="table-responsive">
+            <div className="table-responsive" style={{ minHeight: '280px' }}>
               <table className="table align-middle tasks-table mb-0">
                 <thead>
                   <tr>
-                    <th>Ticket</th>
+                    <th style={{ borderTopLeftRadius: '1rem' }}>Ticket</th>
                     <th>Task Details</th>
                     <th>Assignee & Collaborators</th>
                     <th>Priority</th>
                     <th>Status</th>
                     <th>Dates</th>
-                    <th style={{ minWidth: '220px' }}>Remarks</th>
+                    <th style={{ minWidth: '220px', borderTopRightRadius: '1rem' }}>Remarks</th>
                   </tr>
                 </thead>
                 <tbody>

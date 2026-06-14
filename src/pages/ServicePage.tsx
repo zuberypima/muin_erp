@@ -68,10 +68,10 @@ const ServicePage: React.FC = () => {
   const attendancePct = totalEmployees > 0 ? Math.round((presentCount / totalEmployees) * 100) : 0;
 
   const kpis = [
-    { label: 'Total Employees', value: String(totalEmployees), change: `Active in ERP`, icon: 'fas fa-users', color: 'green', trend: 'up' },
-    { label: 'Monthly Revenue', value: 'TZS 84.2M', change: '+12% vs last month', icon: 'fas fa-chart-line', color: 'blue', trend: 'up' },
-    { label: 'Pending Tasks', value: String(pendingTasks), change: `${tasks.filter(t => t.status === 'Assist-Requested').length} need assist`, icon: 'fas fa-tasks', color: 'orange', trend: 'neutral' },
-    { label: 'Active Loans', value: '12', change: 'TZS 34.5M outstanding', icon: 'fas fa-hand-holding-usd', color: 'purple', trend: 'neutral' },
+    { label: 'Total Employees', value: String(totalEmployees), change: `Active in ERP`, icon: 'fas fa-users', color: 'green', trend: 'up', route: '/hr/employees' },
+    { label: 'Monthly Revenue', value: 'TZS 84.2M', change: '+12% vs last month', icon: 'fas fa-chart-line', color: 'blue', trend: 'up', route: '/finance' },
+    { label: 'Pending Tasks', value: String(pendingTasks), change: `${tasks.filter(t => t.status === 'Assist-Requested').length} need assist`, icon: 'fas fa-tasks', color: 'orange', trend: 'neutral', route: '/tasks' },
+    { label: 'Active Loans', value: '12', change: 'TZS 34.5M outstanding', icon: 'fas fa-hand-holding-usd', color: 'purple', trend: 'neutral', route: '/finance/loans' },
   ];
 
   // Dynamic activity feed
@@ -174,7 +174,11 @@ const ServicePage: React.FC = () => {
           <div className="row g-3 mb-4">
             {kpis.map((kpi, i) => (
               <div key={i} className="col-6 col-lg-3">
-                <div className={`erp-kpi-card kpi-${kpi.color}`}>
+                <div 
+                  className={`erp-kpi-card kpi-${kpi.color}`}
+                  onClick={() => kpi.route && navigate(kpi.route)}
+                  style={{ cursor: kpi.route ? 'pointer' : 'default' }}
+                >
                   <div className="erp-kpi-icon">
                     <i className={kpi.icon}></i>
                   </div>
