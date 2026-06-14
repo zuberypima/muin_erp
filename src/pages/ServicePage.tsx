@@ -21,8 +21,10 @@ const getRelativeTime = (date: Date) => {
 const modules = [
   { label: 'HR Management', icon: 'fas fa-users-cog', desc: 'Employees, Attendance, Leaves, Performance', route: '/hr', color: 'green' },
   { label: 'Finance', icon: 'fas fa-chart-pie', desc: 'Income, Expenses, Budgets, Transactions', route: '/finance', color: 'blue' },
-  { label: 'Office Tasks', icon: 'fas fa-clipboard-list', desc: 'Manage team tasks and assignments', route: '/tasks', color: 'orange' },
-  { label: 'ERP Users', icon: 'fas fa-user-shield', desc: 'Manage system users and access control', route: '/erp-users', color: 'purple' },
+  { label: 'Procurement', icon: 'fas fa-boxes', desc: 'Purchases, Inventory, Assets', route: '/procurement', color: 'orange' },
+  { label: 'IT Management', icon: 'fas fa-server', desc: 'Assets, Users, Tickets, Maintenance', route: '/it', color: 'red' },
+  { label: 'Office Tasks', icon: 'fas fa-clipboard-list', desc: 'Manage team tasks and assignments', route: '/tasks', color: 'purple' },
+  { label: 'ERP Users', icon: 'fas fa-user-shield', desc: 'Manage system users and access control', route: '/erp-users', color: 'gray' },
 ];
 
 const budgetStatus = [
@@ -68,10 +70,10 @@ const ServicePage: React.FC = () => {
   const attendancePct = totalEmployees > 0 ? Math.round((presentCount / totalEmployees) * 100) : 0;
 
   const kpis = [
-    { label: 'Total Employees', value: String(totalEmployees), change: `Active in ERP`, icon: 'fas fa-users', color: 'green', trend: 'up', route: '/hr/employees' },
+    { label: 'Total Employees', value: String(totalEmployees), change: `Active in ERP`, icon: 'fas fa-users', color: 'green', trend: 'up', route: '/hr' },
     { label: 'Monthly Revenue', value: 'TZS 84.2M', change: '+12% vs last month', icon: 'fas fa-chart-line', color: 'blue', trend: 'up', route: '/finance' },
     { label: 'Pending Tasks', value: String(pendingTasks), change: `${tasks.filter(t => t.status === 'Assist-Requested').length} need assist`, icon: 'fas fa-tasks', color: 'orange', trend: 'neutral', route: '/tasks' },
-    { label: 'Active Loans', value: '12', change: 'TZS 34.5M outstanding', icon: 'fas fa-hand-holding-usd', color: 'purple', trend: 'neutral', route: '/finance/loans' },
+    { label: 'Active Loans', value: '12', change: 'TZS 34.5M outstanding', icon: 'fas fa-hand-holding-usd', color: 'purple', trend: 'neutral', route: '/finance' },
   ];
 
   // Dynamic activity feed
