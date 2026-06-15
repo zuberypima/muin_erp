@@ -76,28 +76,53 @@ ul.nav {
 
 @media (max-width: 768px) {
   #side-menu {
-    width: 80px;
-    padding: 1rem !important;
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px !important;
+    height: 100vh;
+    z-index: 1040;
+    transition: left 0.3s ease;
+    padding: 1.5rem !important;
+  }
+  
+  #side-menu.show {
+    left: 0;
   }
   
   #side-menu .fs-4, 
-  #side-menu .menu-label {
-    display: none;
+  #side-menu .menu-label,
+  .nav-item span {
+    display: inline !important;
   }
   
   .custom-nav-link {
-    justify-content: center;
-    padding: 0.75rem;
+    justify-content: space-between !important;
+    padding: 0.75rem 1rem;
   }
   
   .custom-nav-link .nav-icon {
-    margin-right: 0;
-    font-size: 1.25rem;
+    margin-right: 12px;
+    font-size: 1.1rem;
   }
-  
-  .nav-item span {
-    display: none;
+
+  .dropdown-chevron {
+    display: block !important;
   }
+}
+
+.mobile-content-padding {
+  padding-top: 80px !important;
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1030;
 }
 
 .logout-btn {

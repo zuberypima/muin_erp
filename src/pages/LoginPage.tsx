@@ -22,7 +22,7 @@ const LoginPage: React.FC = () => {
         username,
         password,
       });
-      
+
       login(response.data.access, response.data.refresh);
       navigate('/');
     } catch (err: any) {
@@ -39,10 +39,10 @@ const LoginPage: React.FC = () => {
           <div className="login-logo mb-3">
             <i className="fas fa-leaf"></i>
           </div>
-          <h3 className="fw-bold text-dark">Muini <span className="text-primary-green">ERP</span></h3>
+          <h3 className="fw-bold text-dark">Muin<span className="text-primary-green">ERP</span></h3>
           <p className="text-muted">Sign in to your account</p>
         </div>
-        
+
         {error && (
           <div className="alert alert-danger py-2" role="alert" style={{ fontSize: '14px' }}>
             <i className="fas fa-exclamation-circle me-2"></i>{error}
@@ -54,13 +54,13 @@ const LoginPage: React.FC = () => {
             <label className="form-label text-muted fw-semibold small">Username</label>
             <div className="input-group">
               <span className="input-group-text bg-light border-end-0"><i className="fas fa-user text-muted"></i></span>
-              <input 
-                type="text" 
-                className="form-control bg-light border-start-0 ps-0" 
+              <input
+                type="text"
+                className="form-control bg-light border-start-0 ps-0"
                 placeholder="Enter username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                required 
+                required
               />
             </div>
           </div>
@@ -68,18 +68,18 @@ const LoginPage: React.FC = () => {
             <label className="form-label text-muted fw-semibold small">Password</label>
             <div className="input-group">
               <span className="input-group-text bg-light border-end-0"><i className="fas fa-lock text-muted"></i></span>
-              <input 
-                type="password" 
-                className="form-control bg-light border-start-0 ps-0" 
+              <input
+                type="password"
+                className="form-control bg-light border-start-0 ps-0"
                 placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required 
+                required
               />
             </div>
           </div>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn w-100 fw-bold py-2 shadow-sm login-btn"
             disabled={isLoading}
           >
