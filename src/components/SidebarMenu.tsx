@@ -58,26 +58,28 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
   const showUsers = isSuperAdmin || dept === 'HR' || dept === 'IT';
 
   return (
-    <div id="side-menu" className={`d-flex flex-column flex-shrink-0 p-4 ${isOpen ? 'show' : ''}`}>
-      <div className="d-flex align-items-center justify-content-between mb-4">
-        <NavLink to="/" onClick={closeSidebarOnMobile} className="d-flex align-items-center text-decoration-none">
-          <div className="logo-icon me-2">
-            <i className="fas fa-leaf"></i>
-          </div>
-          <span className="fs-4 fw-bold text-dark">MUIN <span className="text-primary-green"> Ltd</span></span>
-        </NavLink>
-        {/* Mobile Close Button */}
-        <button 
-          className="btn btn-sm btn-light d-md-none border-0 shadow-none text-muted" 
-          onClick={() => setIsOpen && setIsOpen(false)}
-        >
-          <i className="fas fa-times fs-5"></i>
-        </button>
+    <div id="side-menu" className={isOpen ? 'show' : ''}>
+      <div className="sidebar-header">
+        <div className="d-flex align-items-center justify-content-between mb-4">
+          <NavLink to="/" onClick={closeSidebarOnMobile} className="d-flex align-items-center text-decoration-none">
+            <div className="logo-icon me-2">
+              <i className="fas fa-leaf"></i>
+            </div>
+            <span className="fs-4 fw-bold text-dark">MUIN <span className="text-primary-green"> Ltd</span></span>
+          </NavLink>
+          {/* Mobile Close Button */}
+          <button 
+            className="btn btn-sm btn-light d-md-none border-0 shadow-none text-muted" 
+            onClick={() => setIsOpen && setIsOpen(false)}
+          >
+            <i className="fas fa-times fs-5"></i>
+          </button>
+        </div>
+        <p className="menu-label text-muted text-uppercase fw-bold mb-0">Main Menu</p>
       </div>
 
-      <p className="menu-label text-muted text-uppercase fw-bold mb-2">Main Menu</p>
-
-      <ul className="nav nav-pills flex-column gap-2" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
+      <div className="sidebar-body">
+        <ul className="nav nav-pills flex-column gap-2">
         {isSuperAdmin && (
           <li className="nav-item">
             <NavLink to="/services" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
@@ -344,9 +346,10 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
             )}
           </li>
         )}
-      </ul>
+        </ul>
+      </div>
 
-      <div className="mt-auto pt-3 border-top">
+      <div className="sidebar-footer">
         <ul className="nav flex-column gap-2" style={{ paddingLeft: 0 }}>
           <li className="nav-item">
             <a href="#" className="nav-link custom-nav-link">

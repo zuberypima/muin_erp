@@ -39,7 +39,7 @@ const LoginPage: React.FC = () => {
           <div className="login-logo mb-3">
             <i className="fas fa-leaf"></i>
           </div>
-          <h3 className="fw-bold text-dark">Muin<span className="text-primary-green">ERP</span></h3>
+          <h3 className="fw-bold text-dark">Muin <span className="text-primary-green">ERP</span></h3>
           <p className="text-muted">Sign in to your account</p>
         </div>
 

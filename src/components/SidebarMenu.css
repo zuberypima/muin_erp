@@ -1,4 +1,6 @@
 #side-menu {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   background-color: var(--surface-white);
   border-right: 1px solid var(--border-color);
   width: 280px;
@@ -6,6 +8,21 @@
   box-shadow: 4px 0 15px rgba(0, 0, 0, 0.02);
   z-index: 10;
   transition: all 0.3s ease;
+}
+
+.sidebar-header {
+  padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+}
+
+.sidebar-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 1.5rem 1rem 1.5rem;
+}
+
+.sidebar-footer {
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
+  border-top: 1px solid var(--border-color);
 }
 
 .text-primary-green {
@@ -83,7 +100,6 @@ ul.nav {
     height: 100vh;
     z-index: 1040;
     transition: left 0.3s ease;
-    padding: 1.5rem !important;
   }
   
   #side-menu.show {
