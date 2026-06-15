@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import muinLogo from '../assets/muin-logo.png';
 import './LoginPage.css';
 
 const LoginPage: React.FC = () => {
@@ -36,11 +37,9 @@ const LoginPage: React.FC = () => {
     <div className="login-container d-flex align-items-center justify-content-center">
       <div className="login-card">
         <div className="text-center mb-4">
-          <div className="login-logo mb-3">
-            <i className="fas fa-leaf"></i>
-          </div>
+          <img src={muinLogo} alt="Logo" style={{ height: '80px', objectFit: 'contain', marginBottom: '1rem' }} />
           <h3 className="fw-bold text-dark">Muin <span className="text-primary-green">ERP</span></h3>
-          <p className="text-muted">Sign in to your account</p>
+          <p className="text-muted mt-2">Sign in to your account</p>
         </div>
 
         {error && (

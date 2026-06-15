@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import muinLogo from '../assets/muin-logo.png';
 import './SidebarMenu.css';
 
 interface SidebarMenuProps {
@@ -59,23 +60,22 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
 
   return (
     <div id="side-menu" className={isOpen ? 'show' : ''}>
-      <div className="sidebar-header">
-        <div className="d-flex align-items-center justify-content-between mb-4">
+      <div className="sidebar-header position-relative">
+        <div className="d-flex align-items-center justify-content-between mb-2">
           <NavLink to="/" onClick={closeSidebarOnMobile} className="d-flex align-items-center text-decoration-none">
-            <div className="logo-icon me-2">
-              <i className="fas fa-leaf"></i>
-            </div>
+            <img src={muinLogo} alt="Logo" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} className="me-2" />
             <span className="fs-4 fw-bold text-dark">MUIN <span className="text-primary-green"> Ltd</span></span>
           </NavLink>
-          {/* Mobile Close Button */}
-          <button 
-            className="btn btn-sm btn-light d-md-none border-0 shadow-none text-muted" 
-            onClick={() => setIsOpen && setIsOpen(false)}
-          >
-            <i className="fas fa-times fs-5"></i>
-          </button>
         </div>
-        <p className="menu-label text-muted text-uppercase fw-bold mb-0">Main Menu</p>
+        {/* Mobile Close Button */}
+        <button 
+          className="btn btn-sm btn-light d-md-none border-0 shadow-none text-muted position-absolute" 
+          style={{ top: '15px', right: '15px' }}
+          onClick={() => setIsOpen && setIsOpen(false)}
+        >
+          <i className="fas fa-times fs-5"></i>
+        </button>
+        <p className="menu-label text-muted text-uppercase fw-bold mb-0 mt-3">Main Menu</p>
       </div>
 
       <div className="sidebar-body">
