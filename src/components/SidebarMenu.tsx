@@ -59,7 +59,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
   const showUsers = isSuperAdmin || dept === 'HR' || dept === 'IT';
 
   return (
-    <div id="side-menu" className={isOpen ? 'show' : ''}>
+    <div id="side-menu" className={`flex-shrink-0 ${isOpen ? 'show' : ''}`}>
       <div className="sidebar-header position-relative">
         <div className="d-flex align-items-center justify-content-between mb-2">
           <NavLink to="/" onClick={closeSidebarOnMobile} className="d-flex align-items-center text-decoration-none">

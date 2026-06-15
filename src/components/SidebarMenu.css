@@ -4,6 +4,7 @@
   background-color: var(--surface-white);
   border-right: 1px solid var(--border-color);
   width: 280px;
+  min-width: 280px;
   height: 100vh;
   box-shadow: 4px 0 15px rgba(0, 0, 0, 0.02);
   z-index: 10;
