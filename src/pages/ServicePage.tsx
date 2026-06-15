@@ -40,6 +40,7 @@ const ServicePage: React.FC = () => {
   const isSuperAdmin = user?.is_staff || user?.department === 'Management';
   const [tasks, setTasks] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,12 +51,14 @@ const ServicePage: React.FC = () => {
 
     const fetchData = async () => {
       try {
-        const [tasksRes, usersRes] = await Promise.all([
+        const [tasksRes, usersRes, ticketsRes] = await Promise.all([
           api.get('/tasks/'),
-          api.get('/users/')
+          api.get('/users/'),
+          api.get('/it/tickets/').catch(() => ({ data: [] }))
         ]);
         setTasks(tasksRes.data);
         setUsers(usersRes.data);
+        setTickets(ticketsRes.data);
       } catch (e) {
         console.error('Failed to fetch dashboard data', e);
       } finally {
@@ -70,6 +73,8 @@ const ServicePage: React.FC = () => {
   // Compute KPI values
   const totalEmployees = users.length;
   const pendingTasks = tasks.filter(t => t.status !== 'Completed').length;
+  const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'in-progress').length;
+  const criticalTickets = tickets.filter(t => t.priority === 'critical' && t.status !== 'resolved' && t.status !== 'closed').length;
   
   // Simulated stats based on real totals to keep visual realism
   const presentCount = Math.max(0, Math.round(totalEmployees * 0.85));
@@ -81,7 +86,7 @@ const ServicePage: React.FC = () => {
     { label: 'Total Employees', value: String(totalEmployees), change: `Active in ERP`, icon: 'fas fa-users', color: 'green', trend: 'up', route: '/hr' },
     { label: 'Monthly Revenue', value: 'TZS 84.2M', change: '+12% vs last month', icon: 'fas fa-chart-line', color: 'blue', trend: 'up', route: '/finance' },
     { label: 'Pending Tasks', value: String(pendingTasks), change: `${tasks.filter(t => t.status === 'Assist-Requested').length} need assist`, icon: 'fas fa-tasks', color: 'orange', trend: 'neutral', route: '/tasks' },
-    { label: 'Active Loans', value: '12', change: 'TZS 34.5M outstanding', icon: 'fas fa-hand-holding-usd', color: 'purple', trend: 'neutral', route: '/finance' },
+    { label: 'Open IT Tickets', value: String(openTickets), change: `${criticalTickets} critical issues`, icon: 'fas fa-headset', color: 'red', trend: 'neutral', route: '/it/support-tickets' },
   ];
 
   // Dynamic activity feed
