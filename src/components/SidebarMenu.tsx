@@ -58,6 +58,21 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
   const showProcurement = isSuperAdmin || dept === 'Logistics' || dept === 'Farm Operations';
   const showUsers = isSuperAdmin || dept === 'HR' || dept === 'IT';
 
+  const getDashboardRoute = () => {
+    if (isSuperAdmin) return '/services';
+    if (dept === 'IT') return '/it';
+    if (dept === 'HR') return '/hr';
+    if (dept === 'Finance') return '/finance';
+    if (dept === 'Logistics' || dept === 'Farm Operations' || dept === 'Procurement') return '/procurement';
+    return '/self-service';
+  };
+
+  const getDashboardLabel = () => {
+    if (isSuperAdmin) return 'Executive Dashboard';
+    if (dept) return `${dept} Dashboard`;
+    return 'My Dashboard';
+  };
+
   return (
     <div id="side-menu" className={`flex-shrink-0 ${isOpen ? 'show' : ''}`}>
       <div className="sidebar-header position-relative">
@@ -80,13 +95,17 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
 
       <div className="sidebar-body">
         <ul className="nav nav-pills flex-column gap-2">
-        {isSuperAdmin && (
           <li className="nav-item">
-            <NavLink to="/services" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
-              <i className="fas fa-tachometer-alt nav-icon"></i> <span>Dashboard</span>
+            <NavLink 
+              to={getDashboardRoute()} 
+              end={getDashboardRoute() !== '/services'}
+              className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}
+              onClick={closeSidebarOnMobile}
+            >
+              <i className="fas fa-tachometer-alt nav-icon"></i> <span>{getDashboardLabel()}</span>
             </NavLink>
           </li>
-        )}
+
 
 
         <li className="nav-item">
