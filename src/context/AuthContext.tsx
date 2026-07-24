@@ -14,9 +14,10 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (access: string, refresh: string) => void;
+  login: (access: string, refresh: string) => Promise<User | null>;
   logout: () => void;
   loading: boolean;
+  userLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +26,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [userLoading, setUserLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -34,8 +36,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const decoded = jwtDecode(token);
           const currentTime = Date.now() / 1000;
           if (decoded.exp && decoded.exp < currentTime) {
-            // Token expired, interceptor will try to refresh on next request
-            // Or we just logout here
+            // Token expired
           }
           setIsAuthenticated(true);
           await fetchUserProfile();
@@ -50,20 +51,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initAuth();
   }, []);
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = async (): Promise<User | null> => {
+    setUserLoading(true);
     try {
       const response = await api.get('/users/me/');
       setUser(response.data);
+      return response.data;
     } catch (error) {
       console.error("Failed to fetch user profile", error);
+      return null;
+    } finally {
+      setUserLoading(false);
     }
   };
 
-  const login = (access: string, refresh: string) => {
+  const login = async (access: string, refresh: string): Promise<User | null> => {
     localStorage.setItem('access_token', access);
     localStorage.setItem('refresh_token', refresh);
     setIsAuthenticated(true);
-    fetchUserProfile();
+    const profile = await fetchUserProfile();
+    return profile;
   };
 
   const logout = () => {
@@ -74,7 +81,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, loading, userLoading }}>
       {children}
     </AuthContext.Provider>
   );

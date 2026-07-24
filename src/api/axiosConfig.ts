@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.DEV
+  ? '/api/'
+  : 'https://muinerpapi-production.up.railway.app/api/';
+
 const api = axios.create({
-  baseURL: 'https://muinerpapi-production.up.railway.app/api/',
+  baseURL: API_BASE_URL,
 });
 
 // Request interceptor to add the auth token to headers
@@ -28,7 +32,10 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refresh_token');
       if (refreshToken) {
         try {
-          const res = await axios.post('https://muinerpapi-production.up.railway.app/api/token/refresh/', {
+          const refreshUrl = import.meta.env.DEV 
+            ? '/api/token/refresh/' 
+            : 'https://muinerpapi-production.up.railway.app/api/token/refresh/';
+          const res = await axios.post(refreshUrl, {
             refresh: refreshToken
           });
           localStorage.setItem('access_token', res.data.access);

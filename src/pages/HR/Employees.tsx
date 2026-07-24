@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axiosConfig';
 import { Employee, DEPARTMENTS, formatDate } from './hrTypes';
+import { SkeletonTable } from '../../components/Skeleton';
 
 const Employees: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -8,6 +9,7 @@ const Employees: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<number | string | null>(null);
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('all');
   const [error, setError] = useState('');
@@ -30,7 +32,7 @@ const Employees: React.FC = () => {
       const res = await api.get('/hr/employees/');
       // Map snake_case API fields to camelCase interface
       const mapped: Employee[] = res.data.map((e: any) => ({
-        id: e.employee_id,
+        id: e.employee_id || e.id,
         firstName: e.first_name,
         lastName: e.last_name,
         email: e.email,
@@ -53,6 +55,53 @@ const Employees: React.FC = () => {
     fetchEmployees();
     api.get('/users/').then(res => setErpUsers(res.data)).catch(() => {});
   }, []);
+
+  const handleOpenAddModal = () => {
+    setEditingId(null);
+    setError('');
+    setForm({
+      user: '', firstName: '', lastName: '', email: '', phone: '',
+      department: 'Farm Operations', position: '',
+      employmentType: 'full-time',
+      startDate: new Date().toISOString().split('T')[0],
+      status: 'active'
+    });
+    setShowModal(true);
+  };
+
+  const handleEdit = (emp: Employee) => {
+    setEditingId(emp.id);
+    setError('');
+    setForm({
+      user: '',
+      firstName: emp.firstName,
+      lastName: emp.lastName,
+      email: emp.email,
+      phone: emp.phone,
+      department: emp.department,
+      position: emp.position,
+      employmentType: emp.employmentType,
+      startDate: emp.startDate,
+      status: emp.status
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id: number | string) => {
+    if (!window.confirm('Are you sure you want to delete this employee? This action cannot be undone.')) {
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      await api.delete(`/hr/employees/${id}/`);
+      await fetchEmployees();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || 'Failed to delete employee.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleUserSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const userId = e.target.value;
@@ -81,39 +130,39 @@ const Employees: React.FC = () => {
     });
   };
 
-  const handleAdd = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError('');
+    const payload = {
+      user: form.user || null,
+      first_name: form.firstName,
+      last_name: form.lastName,
+      email: form.email,
+      phone: form.phone,
+      department: form.department,
+      position: form.position,
+      employment_type: form.employmentType,
+      start_date: form.startDate,
+      status: form.status,
+    };
+
     try {
-      await api.post('/hr/employees/', {
-        user: form.user || null,
-        first_name: form.firstName,
-        last_name: form.lastName,
-        email: form.email,
-        phone: form.phone,
-        department: form.department,
-        position: form.position,
-        employment_type: form.employmentType,
-        start_date: form.startDate,
-        status: form.status,
-      });
+      if (editingId) {
+        await api.put(`/hr/employees/${editingId}/`, payload);
+      } else {
+        await api.post('/hr/employees/', payload);
+      }
       await fetchEmployees();
       setShowModal(false);
-      setForm({
-        user: '', firstName: '', lastName: '', email: '', phone: '',
-        department: 'Farm Operations', position: '',
-        employmentType: 'full-time',
-        startDate: new Date().toISOString().split('T')[0],
-        status: 'active'
-      });
+      setEditingId(null);
     } catch (err: any) {
       const data = err?.response?.data;
       if (data && typeof data === 'object') {
         const msgs = Object.entries(data).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`);
-        setError(msgs.join(' | ') || 'Failed to add employee.');
+        setError(msgs.join(' | ') || 'Failed to save employee.');
       } else {
-        setError('Failed to add employee.');
+        setError('Failed to save employee.');
       }
     } finally {
       setSaving(false);
@@ -146,7 +195,7 @@ const Employees: React.FC = () => {
             </select>
             <button className="btn btn-sm text-white fw-bold px-3"
               style={{ backgroundColor: '#10b981', borderRadius: '8px' }}
-              onClick={() => setShowModal(true)}>
+              onClick={handleOpenAddModal}>
               <i className="fas fa-plus me-2"></i>Add Employee
             </button>
           </div>
@@ -155,7 +204,9 @@ const Employees: React.FC = () => {
         {error && <div className="alert alert-danger mx-4 py-2 small">{error}</div>}
 
         {loading ? (
-          <div className="text-center py-5"><div className="spinner-border text-success"></div></div>
+          <div className="p-3">
+            <SkeletonTable rows={6} cols={8} />
+          </div>
         ) : (
           <div className="table-responsive">
             <table className="table hr-table align-middle">
@@ -168,11 +219,12 @@ const Employees: React.FC = () => {
                   <th>Status</th>
                   <th>Start Date</th>
                   <th>Contact</th>
+                  <th className="text-end pe-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredEmployees.length === 0 ? (
-                  <tr><td colSpan={7} className="text-center text-muted py-4">No employees found.</td></tr>
+                  <tr><td colSpan={8} className="text-center text-muted py-4">No employees found.</td></tr>
                 ) : filteredEmployees.map(emp => (
                   <tr key={emp.id}>
                     <td>
@@ -180,7 +232,7 @@ const Employees: React.FC = () => {
                         <div className="emp-avatar me-3">{emp.firstName.charAt(0)}{emp.lastName.charAt(0)}</div>
                         <div>
                           <div className="fw-semibold text-dark">{emp.firstName} {emp.lastName}</div>
-                          <div className="text-muted small">{emp.id}</div>
+                          <div className="text-muted small">#{emp.id}</div>
                         </div>
                       </div>
                     </td>
@@ -192,6 +244,24 @@ const Employees: React.FC = () => {
                     <td>
                       <div className="small text-muted">{emp.email}</div>
                       <div className="small text-muted">{emp.phone}</div>
+                    </td>
+                    <td className="text-end pe-4">
+                      <button 
+                        className="btn btn-sm btn-outline-primary py-1 px-2.5 me-1 fw-semibold" 
+                        title="Edit Details"
+                        onClick={() => handleEdit(emp)}
+                        style={{ borderRadius: '6px', fontSize: '0.78rem' }}
+                      >
+                        <i className="fas fa-edit me-1"></i> Edit
+                      </button>
+                      <button 
+                        className="btn btn-sm btn-outline-danger py-1 px-2.5 fw-semibold" 
+                        title="Delete Employee"
+                        onClick={() => handleDelete(emp.id)}
+                        style={{ borderRadius: '6px', fontSize: '0.78rem' }}
+                      >
+                        <i className="fas fa-trash-alt me-1"></i> Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -206,24 +276,26 @@ const Employees: React.FC = () => {
           <div className="modal-dialog modal-dialog-centered modal-lg">
             <div className="modal-content border-0 shadow" style={{ borderRadius: '16px' }}>
               <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-bold">Add New Employee</h5>
+                <h5 className="modal-title fw-bold">{editingId ? 'Edit Employee Details' : 'Add New Employee'}</h5>
                 <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
               </div>
-              <form onSubmit={handleAdd}>
+              <form onSubmit={handleSubmit}>
                 <div className="modal-body">
                   <div className="row g-3">
-                    <div className="col-12">
-                      <label className="form-label text-muted small fw-semibold">Link to ERP User Account</label>
-                      <select className="form-select bg-light border-primary" value={form.user} onChange={handleUserSelect}>
-                        <option value="">-- No linked user (create independent profile) --</option>
-                        {erpUsers.map(u => (
-                          <option key={u.id} value={u.id}>{u.username} ({u.email})</option>
-                        ))}
-                      </select>
-                      <small className="text-muted" style={{ fontSize: '11px' }}>
-                        Select an existing user to link their account to this HR profile.
-                      </small>
-                    </div>
+                    {!editingId && (
+                      <div className="col-12">
+                        <label className="form-label text-muted small fw-semibold">Link to ERP User Account</label>
+                        <select className="form-select bg-light border-primary" value={form.user} onChange={handleUserSelect}>
+                          <option value="">-- No linked user (create independent profile) --</option>
+                          {erpUsers.map(u => (
+                            <option key={u.id} value={u.id}>{u.username} ({u.email})</option>
+                          ))}
+                        </select>
+                        <small className="text-muted" style={{ fontSize: '11px' }}>
+                          Select an existing user to link their account to this HR profile.
+                        </small>
+                      </div>
+                    )}
                     <div className="col-md-6">
                       <label className="form-label text-muted small fw-semibold">First Name</label>
                       <input type="text" className="form-control bg-light" required value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})} />
@@ -259,6 +331,14 @@ const Employees: React.FC = () => {
                       </select>
                     </div>
                     <div className="col-md-6">
+                      <label className="form-label text-muted small fw-semibold">Status</label>
+                      <select className="form-select bg-light" value={form.status} onChange={e => setForm({...form, status: e.target.value as any})}>
+                        <option value="active">Active</option>
+                        <option value="on-leave">On-Leave</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+                    <div className="col-md-6">
                       <label className="form-label text-muted small fw-semibold">Start Date</label>
                       <input type="date" className="form-control bg-light" required value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} />
                     </div>
@@ -267,7 +347,7 @@ const Employees: React.FC = () => {
                 <div className="modal-footer border-0">
                   <button type="button" className="btn btn-light fw-semibold" onClick={() => setShowModal(false)}>Cancel</button>
                   <button type="submit" className="btn text-white fw-bold px-4" style={{ backgroundColor: '#10b981' }} disabled={saving}>
-                    {saving ? 'Saving...' : 'Add Employee'}
+                    {saving ? 'Saving...' : (editingId ? 'Update Details' : 'Add Employee')}
                   </button>
                 </div>
               </form>

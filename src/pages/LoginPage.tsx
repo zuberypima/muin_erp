@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axiosConfig';
 import { useAuth } from '../context/AuthContext';
 import muinLogo from '../assets/muin-logo.png';
 import './LoginPage.css';
@@ -26,13 +26,27 @@ const LoginPage: React.FC = () => {
     setError('');
 
     try {
-      const response = await axios.post('https://muinerpapi-production.up.railway.app/api/token/', {
+      const response = await api.post('/token/', {
         username,
         password,
       });
 
-      login(response.data.access, response.data.refresh);
-      navigate('/', { replace: true });
+      // Await user profile fetching before navigating
+      const userProfile = await login(response.data.access, response.data.refresh);
+      
+      let targetRoute = '/self-service';
+      if (userProfile) {
+        const isSuperAdmin = userProfile.is_staff || userProfile.department === 'Management';
+        const dept = userProfile.department;
+        if (isSuperAdmin) targetRoute = '/services';
+        else if (dept === 'IT') targetRoute = '/it';
+        else if (dept === 'HR') targetRoute = '/hr';
+        else if (dept === 'Finance') targetRoute = '/finance';
+        else if (dept === 'Logistics' || dept === 'Farm Operations') targetRoute = '/logistics';
+        else if (dept === 'Procurement') targetRoute = '/procurement';
+      }
+
+      navigate(targetRoute, { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
     } finally {

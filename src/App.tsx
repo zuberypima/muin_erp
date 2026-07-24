@@ -51,7 +51,18 @@ import LogisticsLayout from './pages/Logistics/LogisticsLayout';
 import LogisticsDashboard from './pages/Logistics/LogisticsDashboard';
 
 const RootRedirect = () => {
-  const { user } = useAuth();
+  const { user, userLoading } = useAuth();
+
+  if (userLoading || (!user && localStorage.getItem('access_token'))) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
+        <div className="spinner-border text-success" role="status">
+          <span className="visually-hidden">Loading department dashboard...</span>
+        </div>
+      </div>
+    );
+  }
+
   const isSuperAdmin = user?.is_staff || user?.department === 'Management';
   const dept = user?.department;
 

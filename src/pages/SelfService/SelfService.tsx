@@ -3,6 +3,7 @@ import api from '../../api/axiosConfig';
 import { useAuth } from '../../context/AuthContext';
 import { SupportTicket, TicketCategory, TicketPriority, formatDateTime } from '../IT/itTypes';
 import { LeaveRequest } from '../HR/hrTypes';
+import { SkeletonDashboard } from '../../components/Skeleton';
 
 type LeaveType = LeaveRequest['leaveType'];
 
@@ -141,7 +142,7 @@ const SelfService: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="p-5 text-center"><div className="spinner-border text-primary"></div></div>;
+    return <SkeletonDashboard />;
   }
 
   const stats = {

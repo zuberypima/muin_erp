@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/axiosConfig';
+import { SkeletonDashboard } from '../../components/Skeleton';
 
 const HRDashboard: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
@@ -35,11 +36,7 @@ const HRDashboard: React.FC = () => {
   const pendingLeaves = leaves.filter(l => l.status === 'pending').length;
 
   if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
-        <div className="spinner-border text-success"></div>
-      </div>
-    );
+    return <SkeletonDashboard />;
   }
 
   return (
