@@ -8,6 +8,7 @@ import './LoginPage.css';
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login, isAuthenticated } = useAuth();
@@ -74,13 +75,23 @@ const LoginPage: React.FC = () => {
             <div className="input-group">
               <span className="input-group-text bg-light border-end-0"><i className="fas fa-lock text-muted"></i></span>
               <input
-                type="password"
-                className="form-control bg-light border-start-0 ps-0"
+                type={showPassword ? 'text' : 'password'}
+                className="form-control bg-light border-start-0 border-end-0 ps-0"
                 placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <button
+                type="button"
+                className="input-group-text bg-light border-start-0 text-muted"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+                title={showPassword ? "Hide password" : "Show password"}
+                style={{ cursor: 'pointer', border: '1px solid #ced4da' }}
+              >
+                <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+              </button>
             </div>
           </div>
           <button
