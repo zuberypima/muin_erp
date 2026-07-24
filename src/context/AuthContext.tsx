@@ -2,10 +2,12 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { jwtDecode } from 'jwt-decode';
 import api from '../api/axiosConfig';
 
-interface User {
+export interface User {
   id: number;
   username: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
   is_staff?: boolean;
   department?: string | null;
   employee_profile_id?: number | null;

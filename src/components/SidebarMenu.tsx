@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { resolveDepartmentRoute, isDepartmentMatch } from '../utils/departmentUtils';
 import muinLogo from '../assets/muin-logo.png';
 import './SidebarMenu.css';
 
@@ -15,22 +16,32 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
 
   const isTasksRoute = location.pathname.startsWith('/tasks');
+  const isTasksSubRoute = location.pathname.startsWith('/tasks/') && location.pathname !== '/tasks';
   const [tasksDropdownOpen, setTasksDropdownOpen] = useState(isTasksRoute);
 
   const isHRRoute = location.pathname.startsWith('/hr');
+  const isHRSubRoute = location.pathname.startsWith('/hr/') && location.pathname !== '/hr';
   const [hrDropdownOpen, setHrDropdownOpen] = useState(isHRRoute);
 
   const isFinanceRoute = location.pathname.startsWith('/finance');
+  const isFinanceSubRoute = location.pathname.startsWith('/finance/') && location.pathname !== '/finance';
   const [financeDropdownOpen, setFinanceDropdownOpen] = useState(isFinanceRoute);
 
   const isProcurementRoute = location.pathname.startsWith('/procurement');
+  const isProcurementSubRoute = location.pathname.startsWith('/procurement/') && location.pathname !== '/procurement';
   const [procurementDropdownOpen, setProcurementDropdownOpen] = useState(isProcurementRoute);
 
   const isLogisticsRoute = location.pathname.startsWith('/logistics');
+  const isLogisticsSubRoute = location.pathname.startsWith('/logistics/') && location.pathname !== '/logistics';
   const [logisticsDropdownOpen, setLogisticsDropdownOpen] = useState(isLogisticsRoute);
+
+  const isAssetsRoute = location.pathname.startsWith('/assets');
+  const isAssetsSubRoute = location.pathname.startsWith('/assets/') && location.pathname !== '/assets';
+  const [assetsDropdownOpen, setAssetsDropdownOpen] = useState(isAssetsRoute);
 
   const isITRoute = location.pathname.startsWith('/it');
   const [itDropdownOpen, setItDropdownOpen] = useState(isITRoute);
+  const isITSubRoute = location.pathname.startsWith('/it/') && location.pathname !== '/it';
 
   useEffect(() => {
     if (isTasksRoute) setTasksDropdownOpen(true);
@@ -38,8 +49,9 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
     if (isFinanceRoute) setFinanceDropdownOpen(true);
     if (isProcurementRoute) setProcurementDropdownOpen(true);
     if (isLogisticsRoute) setLogisticsDropdownOpen(true);
+    if (isAssetsRoute) setAssetsDropdownOpen(true);
     if (isITRoute) setItDropdownOpen(true);
-  }, [location.pathname, isTasksRoute, isHRRoute, isFinanceRoute, isProcurementRoute, isLogisticsRoute, isITRoute]);
+  }, [location.pathname, isTasksRoute, isHRRoute, isFinanceRoute, isProcurementRoute, isLogisticsRoute, isAssetsRoute, isITRoute]);
 
   const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -53,25 +65,18 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
     }
   };
 
-  const isSuperAdmin = user?.is_staff || user?.department === 'Management';
+  const isSuperAdmin = user?.is_staff || isDepartmentMatch(user?.department, 'management');
   const dept = user?.department;
 
-  const showHR = isSuperAdmin || dept === 'HR';
-  const showFinance = isSuperAdmin || dept === 'Finance';
-  const showIT = isSuperAdmin || dept === 'IT';
-  const showProcurement = isSuperAdmin || dept === 'Procurement';
-  const showLogistics = isSuperAdmin || dept === 'Logistics' || dept === 'Farm Operations';
-  const showUsers = isSuperAdmin || dept === 'HR' || dept === 'IT';
+  const showHR = isSuperAdmin || isDepartmentMatch(dept, 'hr');
+  const showFinance = isSuperAdmin || isDepartmentMatch(dept, 'finance');
+  const showIT = isSuperAdmin || isDepartmentMatch(dept, 'it');
+  const showProcurement = isSuperAdmin || isDepartmentMatch(dept, 'procurement');
+  const showLogistics = isSuperAdmin || isDepartmentMatch(dept, 'logistics');
+  const showAssets = isSuperAdmin || isDepartmentMatch(dept, 'assets');
+  const showUsers = isSuperAdmin || showHR || showIT;
 
-  const getDashboardRoute = () => {
-    if (isSuperAdmin) return '/services';
-    if (dept === 'IT') return '/it';
-    if (dept === 'HR') return '/hr';
-    if (dept === 'Finance') return '/finance';
-    if (dept === 'Logistics' || dept === 'Farm Operations') return '/logistics';
-    if (dept === 'Procurement') return '/procurement';
-    return '/self-service';
-  };
+  const getDashboardRoute = () => resolveDepartmentRoute(user);
 
   const getDashboardLabel = () => {
     if (isSuperAdmin) return 'Executive Dashboard';
@@ -116,7 +121,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
 
         <li className="nav-item">
           <div
-            className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isTasksRoute ? 'active' : ''}`}
+            className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isTasksSubRoute ? 'active' : ''}`}
             style={{ cursor: 'pointer' }}
             onClick={() => setTasksDropdownOpen(!tasksDropdownOpen)}
           >
@@ -165,7 +170,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
         {showFinance && (
           <li className="nav-item">
             <div
-              className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isFinanceRoute ? 'active' : ''}`}
+              className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isFinanceSubRoute ? 'active' : ''}`}
               style={{ cursor: 'pointer' }}
               onClick={() => setFinanceDropdownOpen(!financeDropdownOpen)}
             >
@@ -177,11 +182,6 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
             </div>
             {financeDropdownOpen && (
               <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
-                <li className="nav-item">
-                  <NavLink to="/finance" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-chart-pie nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Overview</span>
-                  </NavLink>
-                </li>
                 <li className="nav-item">
                   <NavLink to="/finance/income" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
                     <i className="fas fa-arrow-circle-down nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Income</span>
@@ -220,7 +220,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
         {showHR && (
           <li className="nav-item">
             <div
-              className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isHRRoute ? 'active' : ''}`}
+              className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isHRSubRoute ? 'active' : ''}`}
               style={{ cursor: 'pointer' }}
               onClick={() => setHrDropdownOpen(!hrDropdownOpen)}
             >
@@ -232,11 +232,6 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
             </div>
             {hrDropdownOpen && (
               <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
-                <li className="nav-item">
-                  <NavLink to="/hr" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-th-large nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Overview</span>
-                  </NavLink>
-                </li>
                 <li className="nav-item">
                   <NavLink to="/hr/employees" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
                     <i className="fas fa-users nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Employees</span>
@@ -265,7 +260,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
         {showProcurement && (
           <li className="nav-item">
             <div
-              className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isProcurementRoute ? 'active' : ''}`}
+              className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isProcurementSubRoute ? 'active' : ''}`}
               style={{ cursor: 'pointer' }}
               onClick={() => setProcurementDropdownOpen(!procurementDropdownOpen)}
             >
@@ -277,11 +272,6 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
             </div>
             {procurementDropdownOpen && (
               <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
-                <li className="nav-item">
-                  <NavLink to="/procurement" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-chart-bar nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Overview</span>
-                  </NavLink>
-                </li>
                 <li className="nav-item">
                   <NavLink to="/procurement/purchase-requests" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
                     <i className="fas fa-file-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Purchase Requests</span>
@@ -310,7 +300,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
         {showLogistics && (
           <li className="nav-item">
             <div
-              className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isLogisticsRoute ? 'active' : ''}`}
+              className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isLogisticsSubRoute ? 'active' : ''}`}
               style={{ cursor: 'pointer' }}
               onClick={() => setLogisticsDropdownOpen(!logisticsDropdownOpen)}
             >
@@ -323,11 +313,6 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
             {logisticsDropdownOpen && (
               <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
                 <li className="nav-item">
-                  <NavLink to="/logistics" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-chart-bar nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Overview</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
                   <NavLink to="/logistics/inventory" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
                     <i className="fas fa-boxes nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Inventory &amp; Stock</span>
                   </NavLink>
@@ -338,13 +323,63 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink to="/logistics/assets" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-truck-loading nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Fleet &amp; Assets</span>
+                  <NavLink to="/logistics/dispatches" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-shipping-fast nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Dispatches &amp; Shipments</span>
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink to="/logistics/receiving" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-shipping-fast nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Receiving</span>
+                  <NavLink to="/logistics/assets" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-truck-loading nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Fleet &amp; Equipment</span>
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/logistics/reports" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-chart-pie nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Analytics &amp; Reports</span>
+                  </NavLink>
+                </li>
+              </ul>
+            )}
+          </li>
+        )}
+
+        {showAssets && (
+          <li className="nav-item">
+            <div
+              className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isAssetsSubRoute ? 'active' : ''}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setAssetsDropdownOpen(!assetsDropdownOpen)}
+            >
+              <div className="d-flex align-items-center">
+                <i className="fas fa-cubes nav-icon"></i>
+                <span>Records &amp; Assets</span>
+              </div>
+              <i className={`fas fa-chevron-${assetsDropdownOpen ? 'down' : 'right'} ms-auto dropdown-chevron`} style={{ fontSize: '0.8rem' }}></i>
+            </div>
+            {assetsDropdownOpen && (
+              <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
+                <li className="nav-item">
+                  <NavLink to="/assets/register" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-boxes nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Asset Register</span>
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/assets/maintenance" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-tools nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Maintenance</span>
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/assets/transfers" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-exchange-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Custody Transfers</span>
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/assets/records" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-folder-open nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Document Records</span>
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/assets/reports" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-chart-pie nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Valuation &amp; Audits</span>
                   </NavLink>
                 </li>
               </ul>
@@ -355,7 +390,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
         {showIT && (
           <li className="nav-item">
             <div
-              className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isITRoute ? 'active' : ''}`}
+              className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isITSubRoute ? 'active' : ''}`}
               style={{ cursor: 'pointer' }}
               onClick={() => setItDropdownOpen(!itDropdownOpen)}
             >
@@ -367,11 +402,6 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
             </div>
             {itDropdownOpen && (
               <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
-                <li className="nav-item">
-                  <NavLink to="/it" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-th-large nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Overview</span>
-                  </NavLink>
-                </li>
                 <li className="nav-item">
                   <NavLink to="/it/assets" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
                     <i className="fas fa-laptop nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>IT Assets</span>

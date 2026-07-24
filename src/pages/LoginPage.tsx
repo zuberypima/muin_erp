@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { useAuth } from '../context/AuthContext';
+import { resolveDepartmentRoute } from '../utils/departmentUtils';
 import muinLogo from '../assets/muin-logo.png';
 import './LoginPage.css';
 
@@ -33,18 +34,7 @@ const LoginPage: React.FC = () => {
 
       // Await user profile fetching before navigating
       const userProfile = await login(response.data.access, response.data.refresh);
-      
-      let targetRoute = '/self-service';
-      if (userProfile) {
-        const isSuperAdmin = userProfile.is_staff || userProfile.department === 'Management';
-        const dept = userProfile.department;
-        if (isSuperAdmin) targetRoute = '/services';
-        else if (dept === 'IT') targetRoute = '/it';
-        else if (dept === 'HR') targetRoute = '/hr';
-        else if (dept === 'Finance') targetRoute = '/finance';
-        else if (dept === 'Logistics' || dept === 'Farm Operations') targetRoute = '/logistics';
-        else if (dept === 'Procurement') targetRoute = '/procurement';
-      }
+      const targetRoute = resolveDepartmentRoute(userProfile);
 
       navigate(targetRoute, { replace: true });
     } catch (err: any) {

@@ -49,6 +49,22 @@ import SoftwareLicenses from './pages/IT/SoftwareLicenses';
 // Logistics Module
 import LogisticsLayout from './pages/Logistics/LogisticsLayout';
 import LogisticsDashboard from './pages/Logistics/LogisticsDashboard';
+import LogisticsInventory from './pages/Logistics/LogisticsInventory';
+import LogisticsMovements from './pages/Logistics/LogisticsMovements';
+import LogisticsDispatches from './pages/Logistics/LogisticsDispatches';
+import LogisticsFleet from './pages/Logistics/LogisticsFleet';
+import LogisticsReports from './pages/Logistics/LogisticsReports';
+
+// Records & Asset Management Module
+import AssetsLayout from './pages/Assets/AssetsLayout';
+import AssetsDashboard from './pages/Assets/AssetsDashboard';
+import AssetRegister from './pages/Assets/AssetRegister';
+import AssetMaintenance from './pages/Assets/AssetMaintenance';
+import AssetTransfers from './pages/Assets/AssetTransfers';
+import AssetRecords from './pages/Assets/AssetRecords';
+import AssetReports from './pages/Assets/AssetReports';
+
+import { resolveDepartmentRoute } from './utils/departmentUtils';
 
 const RootRedirect = () => {
   const { user, userLoading } = useAuth();
@@ -63,17 +79,8 @@ const RootRedirect = () => {
     );
   }
 
-  const isSuperAdmin = user?.is_staff || user?.department === 'Management';
-  const dept = user?.department;
-
-  if (isSuperAdmin) return <Navigate to="/services" replace />;
-  if (dept === 'IT') return <Navigate to="/it" replace />;
-  if (dept === 'HR') return <Navigate to="/hr" replace />;
-  if (dept === 'Finance') return <Navigate to="/finance" replace />;
-  if (dept === 'Logistics' || dept === 'Farm Operations') return <Navigate to="/logistics" replace />;
-  if (dept === 'Procurement') return <Navigate to="/procurement" replace />;
-
-  return <Navigate to="/self-service" replace />;
+  const targetRoute = resolveDepartmentRoute(user);
+  return <Navigate to={targetRoute} replace />;
 };
 
 const App: React.FC = () => {
@@ -127,11 +134,21 @@ const App: React.FC = () => {
               {/* Logistics & Supply Module */}
               <Route path="logistics" element={<LogisticsLayout />}>
                 <Route index element={<LogisticsDashboard />} />
-                <Route path="inventory" element={<Inventory />} />
-                <Route path="stock-tracking" element={<StockTracking />} />
-                <Route path="assets" element={<Assets />} />
-                <Route path="receiving" element={<GoodsReceiving />} />
-                <Route path="reports" element={<InventoryReports />} />
+                <Route path="inventory" element={<LogisticsInventory />} />
+                <Route path="stock-tracking" element={<LogisticsMovements />} />
+                <Route path="dispatches" element={<LogisticsDispatches />} />
+                <Route path="assets" element={<LogisticsFleet />} />
+                <Route path="reports" element={<LogisticsReports />} />
+              </Route>
+
+              {/* Records & Asset Management Module */}
+              <Route path="assets" element={<AssetsLayout />}>
+                <Route index element={<AssetsDashboard />} />
+                <Route path="register" element={<AssetRegister />} />
+                <Route path="maintenance" element={<AssetMaintenance />} />
+                <Route path="transfers" element={<AssetTransfers />} />
+                <Route path="records" element={<AssetRecords />} />
+                <Route path="reports" element={<AssetReports />} />
               </Route>
 
               {/* IT Module */}
