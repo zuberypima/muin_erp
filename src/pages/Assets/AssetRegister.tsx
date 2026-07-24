@@ -157,7 +157,7 @@ const AssetRegister: React.FC = () => {
         {error && <div className="alert alert-danger py-2">{error}</div>}
 
         {loading ? (
-          <SkeletonTable rows={5} columns={8} />
+          <SkeletonTable rows={5} cols={8} />
         ) : (
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0" style={{ fontSize: '14px' }}>

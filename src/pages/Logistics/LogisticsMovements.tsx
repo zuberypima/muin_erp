@@ -120,7 +120,7 @@ const LogisticsMovements: React.FC = () => {
         {error && <div className="alert alert-danger py-2">{error}</div>}
 
         {loading ? (
-          <SkeletonTable rows={4} columns={7} />
+          <SkeletonTable rows={4} cols={7} />
         ) : (
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0" style={{ fontSize: '14px' }}>

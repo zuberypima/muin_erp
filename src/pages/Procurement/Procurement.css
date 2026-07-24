@@ -10,7 +10,9 @@
 .procurement-subnav {
   display: flex;
   gap: 0.375rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  white-space: nowrap;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
