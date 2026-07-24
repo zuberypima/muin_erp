@@ -26,6 +26,9 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
   const isProcurementRoute = location.pathname.startsWith('/procurement');
   const [procurementDropdownOpen, setProcurementDropdownOpen] = useState(isProcurementRoute);
 
+  const isLogisticsRoute = location.pathname.startsWith('/logistics');
+  const [logisticsDropdownOpen, setLogisticsDropdownOpen] = useState(isLogisticsRoute);
+
   const isITRoute = location.pathname.startsWith('/it');
   const [itDropdownOpen, setItDropdownOpen] = useState(isITRoute);
 
@@ -34,13 +37,14 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
     if (isHRRoute) setHrDropdownOpen(true);
     if (isFinanceRoute) setFinanceDropdownOpen(true);
     if (isProcurementRoute) setProcurementDropdownOpen(true);
+    if (isLogisticsRoute) setLogisticsDropdownOpen(true);
     if (isITRoute) setItDropdownOpen(true);
-  }, [location.pathname, isTasksRoute, isHRRoute, isFinanceRoute, isProcurementRoute, isITRoute]);
+  }, [location.pathname, isTasksRoute, isHRRoute, isFinanceRoute, isProcurementRoute, isLogisticsRoute, isITRoute]);
 
   const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();
     logout();
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   const closeSidebarOnMobile = () => {
@@ -55,7 +59,8 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
   const showHR = isSuperAdmin || dept === 'HR';
   const showFinance = isSuperAdmin || dept === 'Finance';
   const showIT = isSuperAdmin || dept === 'IT';
-  const showProcurement = isSuperAdmin || dept === 'Logistics' || dept === 'Farm Operations';
+  const showProcurement = isSuperAdmin || dept === 'Procurement';
+  const showLogistics = isSuperAdmin || dept === 'Logistics' || dept === 'Farm Operations';
   const showUsers = isSuperAdmin || dept === 'HR' || dept === 'IT';
 
   const getDashboardRoute = () => {
@@ -63,7 +68,8 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
     if (dept === 'IT') return '/it';
     if (dept === 'HR') return '/hr';
     if (dept === 'Finance') return '/finance';
-    if (dept === 'Logistics' || dept === 'Farm Operations' || dept === 'Procurement') return '/procurement';
+    if (dept === 'Logistics' || dept === 'Farm Operations') return '/logistics';
+    if (dept === 'Procurement') return '/procurement';
     return '/self-service';
   };
 
@@ -264,7 +270,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
               onClick={() => setProcurementDropdownOpen(!procurementDropdownOpen)}
             >
               <div className="d-flex align-items-center">
-                <i className="fas fa-boxes nav-icon"></i>
+                <i className="fas fa-shopping-bag nav-icon"></i>
                 <span>Procurement</span>
               </div>
               <i className={`fas fa-chevron-${procurementDropdownOpen ? 'down' : 'right'} ms-auto dropdown-chevron`} style={{ fontSize: '0.8rem' }}></i>
@@ -278,37 +284,67 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
                 </li>
                 <li className="nav-item">
                   <NavLink to="/procurement/purchase-requests" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-file-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Requests</span>
+                    <i className="fas fa-file-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Purchase Requests</span>
                   </NavLink>
                 </li>
                 <li className="nav-item">
                   <NavLink to="/procurement/purchase-orders" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-shopping-cart nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Orders</span>
+                    <i className="fas fa-shopping-cart nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Purchase Orders</span>
                   </NavLink>
                 </li>
                 <li className="nav-item">
                   <NavLink to="/procurement/goods-receiving" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-truck-loading nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Receiving</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/procurement/inventory" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-boxes nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Inventory</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/procurement/stock-tracking" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-exchange-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Stock Tracking</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/procurement/assets" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-laptop nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Assets</span>
+                    <i className="fas fa-truck-loading nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Goods Receiving</span>
                   </NavLink>
                 </li>
                 <li className="nav-item">
                   <NavLink to="/procurement/reports" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
                     <i className="fas fa-chart-pie nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Reports</span>
+                  </NavLink>
+                </li>
+              </ul>
+            )}
+          </li>
+        )}
+
+        {showLogistics && (
+          <li className="nav-item">
+            <div
+              className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isLogisticsRoute ? 'active' : ''}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setLogisticsDropdownOpen(!logisticsDropdownOpen)}
+            >
+              <div className="d-flex align-items-center">
+                <i className="fas fa-boxes nav-icon"></i>
+                <span>Logistics &amp; Supply</span>
+              </div>
+              <i className={`fas fa-chevron-${logisticsDropdownOpen ? 'down' : 'right'} ms-auto dropdown-chevron`} style={{ fontSize: '0.8rem' }}></i>
+            </div>
+            {logisticsDropdownOpen && (
+              <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
+                <li className="nav-item">
+                  <NavLink to="/logistics" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-chart-bar nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Overview</span>
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/logistics/inventory" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-boxes nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Inventory &amp; Stock</span>
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/logistics/stock-tracking" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-exchange-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Stock Movements</span>
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/logistics/assets" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-truck-loading nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Fleet &amp; Assets</span>
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/logistics/receiving" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-shipping-fast nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Receiving</span>
                   </NavLink>
                 </li>
               </ul>

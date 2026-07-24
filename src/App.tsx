@@ -46,6 +46,10 @@ import SupportTickets from './pages/IT/SupportTickets';
 import MaintenanceRecords from './pages/IT/MaintenanceRecords';
 import SoftwareLicenses from './pages/IT/SoftwareLicenses';
 
+// Logistics Module
+import LogisticsLayout from './pages/Logistics/LogisticsLayout';
+import LogisticsDashboard from './pages/Logistics/LogisticsDashboard';
+
 const RootRedirect = () => {
   const { user } = useAuth();
   const isSuperAdmin = user?.is_staff || user?.department === 'Management';
@@ -55,7 +59,8 @@ const RootRedirect = () => {
   if (dept === 'IT') return <Navigate to="/it" replace />;
   if (dept === 'HR') return <Navigate to="/hr" replace />;
   if (dept === 'Finance') return <Navigate to="/finance" replace />;
-  if (dept === 'Logistics' || dept === 'Farm Operations') return <Navigate to="/procurement" replace />;
+  if (dept === 'Logistics' || dept === 'Farm Operations') return <Navigate to="/logistics" replace />;
+  if (dept === 'Procurement') return <Navigate to="/procurement" replace />;
 
   return <Navigate to="/self-service" replace />;
 };
@@ -96,7 +101,7 @@ const App: React.FC = () => {
                 <Route path="performance" element={<Performance />} />
               </Route>
 
-              {/* Procurement & Inventory Module */}
+              {/* Procurement & Purchasing Module */}
               <Route path="procurement" element={<ProcurementLayout />}>
                 <Route index element={<ProcurementDashboard />} />
                 <Route path="purchase-requests" element={<PurchaseRequests />} />
@@ -105,6 +110,16 @@ const App: React.FC = () => {
                 <Route path="inventory" element={<Inventory />} />
                 <Route path="stock-tracking" element={<StockTracking />} />
                 <Route path="assets" element={<Assets />} />
+                <Route path="reports" element={<InventoryReports />} />
+              </Route>
+
+              {/* Logistics & Supply Module */}
+              <Route path="logistics" element={<LogisticsLayout />}>
+                <Route index element={<LogisticsDashboard />} />
+                <Route path="inventory" element={<Inventory />} />
+                <Route path="stock-tracking" element={<StockTracking />} />
+                <Route path="assets" element={<Assets />} />
+                <Route path="receiving" element={<GoodsReceiving />} />
                 <Route path="reports" element={<InventoryReports />} />
               </Route>
 
