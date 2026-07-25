@@ -4,13 +4,13 @@ export interface DepartmentUser {
 }
 
 export const resolveDepartmentRoute = (user?: DepartmentUser | null): string => {
-  if (!user) return '/self-service';
+  if (!user) return '/services';
   
   const isSuperAdmin = user.is_staff || user.department === 'Management';
   if (isSuperAdmin) return '/services';
 
   const dept = (user.department || '').toLowerCase().trim();
-  if (!dept) return '/self-service';
+  if (!dept) return '/services';
 
   if (dept.includes('management') || dept.includes('admin') || dept.includes('executive')) {
     return '/services';
@@ -34,7 +34,7 @@ export const resolveDepartmentRoute = (user?: DepartmentUser | null): string => 
     return '/it';
   }
 
-  return '/self-service';
+  return '/services';
 };
 
 export const isDepartmentMatch = (userDept: string | null | undefined, targetKey: 'hr' | 'finance' | 'it' | 'logistics' | 'procurement' | 'assets' | 'management'): boolean => {

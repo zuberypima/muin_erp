@@ -12,14 +12,15 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user, userLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/', { replace: true });
+    if (isAuthenticated && !userLoading && user) {
+      const targetRoute = resolveDepartmentRoute(user);
+      navigate(targetRoute, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, userLoading, user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
