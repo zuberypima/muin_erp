@@ -74,7 +74,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
   const showProcurement = isSuperAdmin || isDepartmentMatch(dept, 'procurement');
   const showLogistics = isSuperAdmin || isDepartmentMatch(dept, 'logistics');
   const showAssets = isSuperAdmin || isDepartmentMatch(dept, 'assets');
-  const showUsers = isSuperAdmin || showHR || showIT;
+  const showUsers = isSuperAdmin;
 
   const getDashboardRoute = () => resolveDepartmentRoute(user);
 

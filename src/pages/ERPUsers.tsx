@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
+import { useAuth } from '../context/AuthContext';
+import { isDepartmentMatch, resolveDepartmentRoute } from '../utils/departmentUtils';
 
 interface ERPUser {
   id: number;
@@ -9,8 +12,11 @@ interface ERPUser {
 }
 
 const ERPUsers: React.FC = () => {
+  const { user } = useAuth();
   const [users, setUsers] = useState<ERPUser[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const isSuperAdmin = user?.is_staff || isDepartmentMatch(user?.department, 'management');
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -24,8 +30,15 @@ const ERPUsers: React.FC = () => {
       }
     };
 
-    fetchUsers();
-  }, []);
+    if (isSuperAdmin) {
+      fetchUsers();
+    }
+  }, [isSuperAdmin]);
+
+  if (user && !isSuperAdmin) {
+    const fallbackRoute = resolveDepartmentRoute(user);
+    return <Navigate to={fallbackRoute} replace />;
+  }
 
   return (
     <div className="container-fluid py-2 fade-in">
