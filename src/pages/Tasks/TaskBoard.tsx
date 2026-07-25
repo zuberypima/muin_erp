@@ -32,6 +32,7 @@ const TaskBoard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [assignedStaffFilter, setAssignedStaffFilter] = useState('All');
   const [sortBy, setSortBy] = useState('due_date_asc');
   const [editingRemarksTaskId, setEditingRemarksTaskId] = useState<string | null>(null);
   const [tempRemarks, setTempRemarks] = useState('');
@@ -106,7 +107,8 @@ const TaskBoard: React.FC = () => {
        (t.assigned_to_detail?.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
        String(t.ticket_number || '').includes(searchTerm)) &&
       (priorityFilter === 'All' || t.priority === priorityFilter) &&
-      (statusFilter === 'All' || t.status === statusFilter)
+      (statusFilter === 'All' || t.status === statusFilter) &&
+      (assignedStaffFilter === 'All' || t.assigned_to_detail?.username === assignedStaffFilter || t.assigned_to === assignedStaffFilter)
     )
     .sort((a, b) => {
       if (sortBy === 'due_date_asc') return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
@@ -187,6 +189,12 @@ const TaskBoard: React.FC = () => {
             <select className="filter-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="All">All Statuses</option>
               {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select className="filter-select" value={assignedStaffFilter} onChange={e => setAssignedStaffFilter(e.target.value)}>
+              <option value="All">All Assigned Staff</option>
+              {allUsers.map(u => (
+                <option key={u.id} value={u.username}>{u.username} ({u.email})</option>
+              ))}
             </select>
             <select className="filter-select" value={sortBy} onChange={e => setSortBy(e.target.value)}>
               <option value="due_date_asc">Due (Soonest)</option>

@@ -114,6 +114,7 @@ const App: React.FC = () => {
               <Route path="hr" element={<HRLayout />}>
                 <Route index element={<HRDashboard />} />
                 <Route path="employees" element={<Employees />} />
+                <Route path="tasks" element={<TaskBoard />} />
                 <Route path="attendance" element={<Attendance />} />
                 <Route path="leaves" element={<Leaves />} />
                 <Route path="performance" element={<Performance />} />

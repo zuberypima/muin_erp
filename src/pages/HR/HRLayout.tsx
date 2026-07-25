@@ -10,6 +10,7 @@ const HRLayout: React.FC = () => {
   const tabs = [
     { to: '/hr',            label: 'Overview',    icon: 'fas fa-th-large',     end: true },
     { to: '/hr/employees',  label: 'Employees',   icon: 'fas fa-users' },
+    { to: '/hr/tasks',      label: 'Staff Tasks', icon: 'fas fa-tasks' },
     { to: '/hr/attendance', label: 'Attendance',  icon: 'fas fa-calendar-check' },
     { to: '/hr/leaves',     label: 'Leaves',      icon: 'fas fa-umbrella-beach' },
     { to: '/hr/performance',label: 'Performance', icon: 'fas fa-star' },
