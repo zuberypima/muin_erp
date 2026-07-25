@@ -40,14 +40,14 @@ const AssetsLayout: React.FC = () => {
           <p className="text-muted mb-0 small"><i className="far fa-calendar-alt me-1"></i>{todayFormatted}</p>
         </div>
 
-        <div className="d-flex align-items-center gap-3">
-          <div className="d-flex align-items-center gap-2.5 p-2 px-3 bg-white border rounded-3 shadow-sm" style={{ borderRadius: '12px' }}>
-            <div className="avatar bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style={{ width: '38px', height: '38px', fontSize: '0.95rem' }}>
+        <div className="d-flex align-items-center">
+          <div className="header-user-badge">
+            <div className="avatar bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold">
               <i className="fas fa-archive"></i>
             </div>
-            <div>
-              <p className="mb-0 fw-bold fs-6 lh-1 text-dark">{displayName}</p>
-              <p className="mb-0 text-muted" style={{ fontSize: '0.75rem' }}>
+            <div className="header-user-badge-text">
+              <p className="header-user-badge-title">{displayName}</p>
+              <p className="header-user-badge-sub">
                 {user?.is_staff ? 'Super Admin / Manager' : (user?.department ? `${user.department} Department` : 'Asset & Records Officer')}
               </p>
             </div>
