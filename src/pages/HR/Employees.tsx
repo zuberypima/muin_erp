@@ -30,18 +30,19 @@ const Employees: React.FC = () => {
   const fetchEmployees = async () => {
     try {
       const res = await api.get('/hr/employees/');
-      // Map snake_case API fields to camelCase interface
-      const mapped: Employee[] = res.data.map((e: any) => ({
-        id: e.employee_id || e.id,
-        firstName: e.first_name,
-        lastName: e.last_name,
-        email: e.email,
-        phone: e.phone,
-        department: e.department,
-        position: e.position,
-        employmentType: e.employment_type,
-        startDate: e.start_date,
-        status: e.status,
+      const dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+      // Map snake_case API fields to camelCase interface, prioritizing database primary key (id) for API routes
+      const mapped: Employee[] = dataArr.map((e: any) => ({
+        id: e.id !== undefined && e.id !== null ? e.id : (e.pk || e.employee_id),
+        firstName: e.first_name || e.firstName || '',
+        lastName: e.last_name || e.lastName || '',
+        email: e.email || '',
+        phone: e.phone || '',
+        department: e.department || 'Farm Operations',
+        position: e.position || '',
+        employmentType: e.employment_type || e.employmentType || 'full-time',
+        startDate: e.start_date || e.startDate || new Date().toISOString().split('T')[0],
+        status: e.status || 'active',
       }));
       setEmployees(mapped);
     } catch {
@@ -53,7 +54,10 @@ const Employees: React.FC = () => {
 
   useEffect(() => {
     fetchEmployees();
-    api.get('/users/').then(res => setErpUsers(res.data)).catch(() => {});
+    api.get('/users/').then(res => {
+      const usersArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+      setErpUsers(usersArr);
+    }).catch(() => {});
   }, []);
 
   const handleOpenAddModal = () => {
@@ -149,7 +153,9 @@ const Employees: React.FC = () => {
 
     try {
       if (editingId) {
-        await api.put(`/hr/employees/${editingId}/`, payload);
+        await api.patch(`/hr/employees/${editingId}/`, payload).catch(async () => {
+          return await api.put(`/hr/employees/${editingId}/`, payload);
+        });
       } else {
         await api.post('/hr/employees/', payload);
       }
