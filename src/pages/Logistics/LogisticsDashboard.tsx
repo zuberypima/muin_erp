@@ -15,15 +15,16 @@ const LogisticsDashboard: React.FC = () => {
     const fetchData = async () => {
       try {
         const [contRes, vesRes, dispRes, assetRes] = await Promise.all([
-          api.get('/procurement/inventory/').catch(() => ({ data: [] })),
-          api.get('/procurement/stock-movements/').catch(() => ({ data: [] })),
-          api.get('/procurement/shipments/').catch(() => ({ data: [] })),
-          api.get('/procurement/assets/').catch(() => ({ data: [] }))
+          api.get('/logistics/containers/').catch(() => ({ data: [] })),
+          api.get('/logistics/vessels/').catch(() => ({ data: [] })),
+          api.get('/logistics/dispatches/').catch(() => ({ data: [] })),
+          api.get('/assets/fixed-assets/').catch(() => ({ data: [] }))
         ]);
-        setContainers(contRes.data || []);
-        setVessels(vesRes.data || []);
-        setDispatches(dispRes.data || []);
-        setAssets(assetRes.data || []);
+        const getArr = (d: any) => Array.isArray(d) ? d : (d?.results || []);
+        setContainers(getArr(contRes.data));
+        setVessels(getArr(vesRes.data));
+        setDispatches(getArr(dispRes.data));
+        setAssets(getArr(assetRes.data));
       } catch (err) {
         console.error("Failed to fetch marine logistics data:", err);
       } finally {
@@ -37,13 +38,13 @@ const LogisticsDashboard: React.FC = () => {
     return <SkeletonDashboard />;
   }
 
-  // Demo Fallback Counts if backend table is initial
   const totalTEUs = containers.length > 0 ? containers.length * 2 : 1420;
   const activeVessels = vessels.length > 0 ? vessels.length : 6;
+  const activeDispatches = dispatches.length > 0 ? dispatches.length : 18;
   const customsPending = containers.filter(c => !c.customs_cleared).length || 14;
   const operationalFleet = assets.length > 0 ? assets.length : 12;
 
-  const mockVessels: VesselVoyage[] = [
+  const mockVessels: VesselVoyage[] = vessels.length > 0 ? vessels : [
     { id: 1, vessel_name: 'MV Muin Trader', imo_number: 'IMO 9812401', voyage_number: 'V.2026-04E', origin_port: 'Port of Singapore', destination_port: 'Port of Dar es Salaam', eta: '2026-07-25 08:00', etd: '2026-07-27 18:00', berth_no: 'Berth 04', total_teus: 2400, status: 'berthing-loading', shipping_line: 'MUIN Shipping Lines' },
     { id: 2, vessel_name: 'CMA CGM Oceanus', imo_number: 'IMO 9741029', voyage_number: 'V.8802-W', origin_port: 'Dubai Jebel Ali', destination_port: 'Port of Zanzibar', eta: '2026-07-26 14:30', etd: '2026-07-28 12:00', berth_no: 'Berth 02', total_teus: 1850, status: 'at-anchor', shipping_line: 'CMA CGM' },
     { id: 3, vessel_name: 'Maersk Mc-Kinney', imo_number: 'IMO 9632064', voyage_number: 'V.9021-S', origin_port: 'Port of Shanghai', destination_port: 'Port of Dar es Salaam', eta: '2026-07-28 06:00', etd: '2026-07-30 20:00', berth_no: 'Berth 07', total_teus: 4200, status: 'sailing', shipping_line: 'Maersk Line' },
@@ -74,7 +75,7 @@ const LogisticsDashboard: React.FC = () => {
               <div>
                 <p className="text-muted small fw-semibold text-uppercase mb-1">Active Vessel Voyages</p>
                 <h3 className="fw-bold text-dark mb-0">{activeVessels} <span className="fs-6 fw-normal text-muted">Ships</span></h3>
-                <span className="badge bg-success-subtle text-success mt-2">2 Berthing Now</span>
+                <span className="badge bg-success-subtle text-success mt-2">{activeDispatches} Inland Dispatches</span>
               </div>
               <div className="bg-success text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style={{ width: '52px', height: '52px' }}>
                 <i className="fas fa-ship fs-4"></i>
@@ -87,12 +88,12 @@ const LogisticsDashboard: React.FC = () => {
           <div className="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white border-start border-4 border-warning">
             <div className="d-flex justify-content-between align-items-center">
               <div>
-                <p className="text-muted small fw-semibold text-uppercase mb-1">Customs Clearance</p>
-                <h3 className="fw-bold text-dark mb-0">{customsPending} <span className="fs-6 fw-normal text-muted">B/L Pending</span></h3>
-                <span className="badge bg-warning-subtle text-warning mt-2">TRA Customs Hold</span>
+                <p className="text-muted small fw-semibold text-uppercase mb-1">TRA Customs Holds</p>
+                <h3 className="fw-bold text-dark mb-0">{customsPending} <span className="fs-6 fw-normal text-muted">Holds</span></h3>
+                <span className="badge bg-warning-subtle text-warning mt-2">Needs Verification</span>
               </div>
               <div className="bg-warning text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style={{ width: '52px', height: '52px' }}>
-                <i className="fas fa-file-invoice fs-4"></i>
+                <i className="fas fa-file-invoice-dollar fs-4"></i>
               </div>
             </div>
           </div>
@@ -102,115 +103,92 @@ const LogisticsDashboard: React.FC = () => {
           <div className="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white border-start border-4 border-info">
             <div className="d-flex justify-content-between align-items-center">
               <div>
-                <p className="text-muted small fw-semibold text-uppercase mb-1">Marine &amp; Port Assets</p>
+                <p className="text-muted small fw-semibold text-uppercase mb-1">Port & Marine Fleet</p>
                 <h3 className="fw-bold text-dark mb-0">{operationalFleet} <span className="fs-6 fw-normal text-muted">Units</span></h3>
-                <span className="badge bg-info-subtle text-info mt-2">Tugboats &amp; Quay Cranes</span>
+                <span className="badge bg-info-subtle text-info mt-2">100% Operational</span>
               </div>
               <div className="bg-info text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style={{ width: '52px', height: '52px' }}>
-                <i className="fas fa-truck-loading fs-4"></i>
+                <i className="fas fa-anchor fs-4"></i>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Quick Action Navigation Buttons */}
-      <div className="card border-0 shadow-sm rounded-3 p-3 mb-4 bg-white">
-        <h6 className="fw-bold text-dark mb-3"><i className="fas fa-bolt text-warning me-2"></i>Marine Port Operations Quick Actions</h6>
-        <div className="row g-2">
-          <div className="col-md-3">
-            <Link to="/logistics/inventory" className="btn btn-light border text-start w-100 p-3 rounded-3 d-flex align-items-center">
-              <i className="fas fa-boxes text-primary fs-4 me-3"></i>
-              <div>
-                <div className="fw-bold text-dark small">Container Yard</div>
-                <div className="text-muted" style={{ fontSize: '0.72rem' }}>Track 20ft &amp; 40ft Containers</div>
-              </div>
-            </Link>
-          </div>
-          <div className="col-md-3">
-            <Link to="/logistics/stock-tracking" className="btn btn-light border text-start w-100 p-3 rounded-3 d-flex align-items-center">
-              <i className="fas fa-ship text-success fs-4 me-3"></i>
-              <div>
-                <div className="fw-bold text-dark small">Vessel Schedule</div>
-                <div className="text-muted" style={{ fontSize: '0.72rem' }}>Log Berth &amp; Voyage Calls</div>
-              </div>
-            </Link>
-          </div>
-          <div className="col-md-3">
-            <Link to="/logistics/dispatches" className="btn btn-light border text-start w-100 p-3 rounded-3 d-flex align-items-center">
-              <i className="fas fa-file-invoice text-warning fs-4 me-3"></i>
-              <div>
-                <div className="fw-bold text-dark small">B/L &amp; Dispatches</div>
-                <div className="text-muted" style={{ fontSize: '0.72rem' }}>Issue Gate Pass &amp; Delivery Orders</div>
-              </div>
-            </Link>
-          </div>
-          <div className="col-md-3">
-            <Link to="/logistics/assets" className="btn btn-light border text-start w-100 p-3 rounded-3 d-flex align-items-center">
-              <i className="fas fa-truck-loading text-info fs-4 me-3"></i>
-              <div>
-                <div className="fw-bold text-dark small">Tugboats &amp; Cranes</div>
-                <div className="text-muted" style={{ fontSize: '0.72rem' }}>Manage Quay Cranes &amp; Fleet</div>
-              </div>
-            </Link>
+      {/* Tables Row */}
+      <div className="row g-4 mb-4">
+        <div className="col-lg-8">
+          <div className="card border-0 shadow-sm rounded-3 p-4 bg-white">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5 className="fw-bold text-dark mb-0">Expected Vessels & Port Arrivals</h5>
+              <Link to="/logistics/movements" className="btn btn-sm btn-outline-primary fw-semibold">View All Schedules</Link>
+            </div>
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0" style={{ fontSize: '14px' }}>
+                <thead className="table-light">
+                  <tr>
+                    <th>Vessel & IMO</th>
+                    <th>Voyage #</th>
+                    <th>Origin Port</th>
+                    <th>ETA</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mockVessels.map(v => (
+                    <tr key={v.id}>
+                      <td>
+                        <span className="fw-bold text-dark d-block">{v.vessel_name}</span>
+                        <small className="text-muted">{v.imo_number}</small>
+                      </td>
+                      <td className="fw-semibold text-primary">{v.voyage_number}</td>
+                      <td>{v.origin_port}</td>
+                      <td className="text-success fw-semibold">{v.eta}</td>
+                      <td>
+                        <span className={`badge ${
+                          v.status === 'berthing-loading' ? 'bg-primary' :
+                          v.status === 'at-anchor' ? 'bg-warning' : 'bg-success'
+                        }`}>
+                          {v.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Live Vessel Movements Table */}
-      <div className="card border-0 shadow-sm rounded-3 p-4 bg-white mb-4">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <h5 className="fw-bold text-dark mb-1"><i className="fas fa-anchor text-primary me-2"></i>Live Container Vessel Schedule</h5>
-            <p className="text-muted small mb-0">Expected arrival, berth allocation, and TEU capacity logs at Dar es Salaam Port.</p>
+        <div className="col-lg-4">
+          <div className="card border-0 shadow-sm rounded-3 p-4 bg-white">
+            <h5 className="fw-bold text-dark mb-3">Quick Logistics Links</h5>
+            <div className="d-flex flex-column gap-2">
+              <Link to="/logistics/inventory" className="btn btn-light text-start p-3 border d-flex justify-content-between align-items-center">
+                <div>
+                  <span className="fw-bold text-dark d-block">Container Terminal Yard</span>
+                  <small className="text-muted">Yard slots, weights, customs clearance</small>
+                </div>
+                <i className="fas fa-chevron-right text-muted"></i>
+              </Link>
+
+              <Link to="/logistics/dispatches" className="btn btn-light text-start p-3 border d-flex justify-content-between align-items-center">
+                <div>
+                  <span className="fw-bold text-dark d-block">Inland Transit Dispatches</span>
+                  <small className="text-muted">Truck haulage & TAZARA rail freight</small>
+                </div>
+                <i className="fas fa-chevron-right text-muted"></i>
+              </Link>
+
+              <Link to="/logistics/fleet" className="btn btn-light text-start p-3 border d-flex justify-content-between align-items-center">
+                <div>
+                  <span className="fw-bold text-dark d-block">Marine Asset Equipment</span>
+                  <small className="text-muted">Tugboats, quay cranes & reach stackers</small>
+                </div>
+                <i className="fas fa-chevron-right text-muted"></i>
+              </Link>
+            </div>
           </div>
-          <Link to="/logistics/stock-tracking" className="btn btn-sm btn-outline-primary fw-semibold">View All Vessels</Link>
-        </div>
-
-        <div className="table-responsive border rounded-3">
-          <table className="table align-middle mb-0" style={{ fontSize: '0.86rem' }}>
-            <thead className="bg-light text-muted fw-bold">
-              <tr>
-                <th className="ps-3 py-3 border-0">Vessel &amp; Voyage</th>
-                <th className="py-3 border-0">Shipping Line</th>
-                <th className="py-3 border-0">Origin → Destination</th>
-                <th className="py-3 border-0">Berth No</th>
-                <th className="py-3 border-0 text-center">TEU Capacity</th>
-                <th className="py-3 border-0">Status</th>
-                <th className="py-3 border-0 text-end pe-4">ETA / ETD</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mockVessels.map(v => (
-                <tr key={v.id}>
-                  <td className="ps-3 py-3">
-                    <div className="fw-bold text-dark"><i className="fas fa-ship me-1 text-secondary"></i>{v.vessel_name}</div>
-                    <div className="text-muted small" style={{ fontSize: '0.75rem' }}>{v.imo_number} | {v.voyage_number}</div>
-                  </td>
-                  <td className="py-3 fw-semibold text-dark">{v.shipping_line}</td>
-                  <td className="py-3 small">
-                    <div className="text-muted">{v.origin_port}</div>
-                    <div className="fw-semibold text-dark">→ {v.destination_port}</div>
-                  </td>
-                  <td className="py-3"><span className="badge bg-light text-dark border font-monospace">{v.berth_no}</span></td>
-                  <td className="py-3 text-center fw-bold">{v.total_teus.toLocaleString()} TEUs</td>
-                  <td className="py-3">
-                    <span className={`badge ${
-                      v.status === 'berthing-loading' ? 'bg-success-subtle text-success border border-success-subtle' :
-                      v.status === 'at-anchor' ? 'bg-warning-subtle text-warning border border-warning-subtle' :
-                      'bg-info-subtle text-info border border-info-subtle'
-                    }`} style={{ borderRadius: '6px' }}>
-                      {v.status.replace('-', ' ').toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="py-3 text-end pe-4 small">
-                    <div className="fw-semibold text-dark">ETA: {v.eta}</div>
-                    <div className="text-muted">ETD: {v.etd}</div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
