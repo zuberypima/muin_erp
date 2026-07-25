@@ -6,6 +6,7 @@ const API_BASE_URL = import.meta.env.DEV
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 8000, // 8-second timeout to prevent hanging UI on cold-start backends
 });
 
 // Request interceptor to add the auth token to headers
