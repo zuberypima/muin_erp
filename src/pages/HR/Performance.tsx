@@ -22,6 +22,7 @@ const demoPerformance: EmployeePerformance[] = [
 const Performance: React.FC = () => {
   const [employees, setEmployees] = useState<EmployeePerformance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const fetchPerformance = async () => {
     try {
