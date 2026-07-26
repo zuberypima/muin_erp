@@ -5,6 +5,7 @@ import ServicePage from './pages/ServicePage';
 import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import IdleTimerManager from './components/IdleTimerManager';
 import TaskBoard from './pages/Tasks/TaskBoard';
 import RequestsInbox from './pages/Tasks/RequestsInbox';
 import ERPUsers from './pages/ERPUsers.tsx';
@@ -87,6 +88,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <IdleTimerManager />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route element={<ProtectedRoute />}>

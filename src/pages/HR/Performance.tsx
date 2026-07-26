@@ -10,15 +10,6 @@ interface EmployeePerformance {
   completed_tasks_count: number;
 }
 
-const demoPerformance: EmployeePerformance[] = [
-  { id: 1, full_name: 'Amina Hassan', department: 'Management', position: 'General Manager', completed_tasks_count: 12 },
-  { id: 2, full_name: 'James Okonkwo', department: 'Farm Operations', position: 'Head of Agriculture', completed_tasks_count: 8 },
-  { id: 3, full_name: 'Fatuma Ally', department: 'Finance', position: 'Finance Officer', completed_tasks_count: 6 },
-  { id: 4, full_name: 'Peter Kamau', department: 'Sales & Marketing', position: 'Sales Manager', completed_tasks_count: 2 },
-  { id: 5, full_name: 'Grace Mwangi', department: 'IT', position: 'IT Administrator', completed_tasks_count: 9 },
-  { id: 6, full_name: 'Ibrahim Salim', department: 'Logistics', position: 'Logistics Coordinator', completed_tasks_count: 5 },
-];
-
 const Performance: React.FC = () => {
   const [employees, setEmployees] = useState<EmployeePerformance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,28 +17,61 @@ const Performance: React.FC = () => {
 
   const fetchPerformance = async () => {
     try {
-      const res = await api.get('/hr/employees/');
-      const dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
-      const mapped: EmployeePerformance[] = dataArr.map((e: any, idx: number) => {
-        const fname = e.first_name || e.firstName || e.full_name || 'Staff';
-        const lname = e.last_name || e.lastName || 'Member';
+      setError('');
+      const [empRes, tasksRes] = await Promise.allSettled([
+        api.get('/hr/employees/'),
+        api.get('/tasks/'),
+      ]);
+
+      const empData = empRes.status === 'fulfilled' ? empRes.value.data : [];
+      const tasksData = tasksRes.status === 'fulfilled' ? tasksRes.value.data : [];
+
+      const empArr = Array.isArray(empData) ? empData : (empData?.results || []);
+      const tasksArr = Array.isArray(tasksData) ? tasksData : (tasksData?.results || []);
+
+      const mapped: EmployeePerformance[] = empArr.map((e: any, idx: number) => {
+        const fname = e.first_name || e.firstName || e.full_name || '';
+        const lname = e.last_name || e.lastName || '';
+        const fullName = `${fname} ${lname}`.trim() || e.email || `Employee #${e.id || idx + 1}`;
+        
+        const empIdentifiers = [
+          e.username,
+          e.user_detail?.username,
+          e.email,
+          fullName.toLowerCase(),
+          fname.toLowerCase(),
+        ].filter(Boolean);
+
+        // Count REAL completed tasks assigned to this employee across the ERP system
+        const realCompletedCount = tasksArr.filter((t: any) => {
+          const isCompleted = String(t.status || '').toLowerCase() === 'completed' || String(t.status || '').toLowerCase() === 'done';
+          if (!isCompleted) return false;
+
+          const assignedUser = String(
+            t.assigned_to_detail?.username || 
+            t.assigned_to_detail?.email || 
+            t.assigned_to_detail?.first_name || 
+            t.assigned_to || ''
+          ).toLowerCase();
+
+          return empIdentifiers.some(id => assignedUser.includes(String(id).toLowerCase()));
+        }).length;
+
         return {
           id: e.id || idx + 1,
-          full_name: `${fname} ${lname}`.trim(),
-          department: e.department || 'Operations',
+          full_name: fullName,
+          department: e.department || 'General',
           position: e.position || 'Staff Member',
-          completed_tasks_count: Number(e.completed_tasks_count) || (idx % 5 + 1),
+          completed_tasks_count: e.completed_tasks_count !== undefined && e.completed_tasks_count !== null 
+            ? Number(e.completed_tasks_count) 
+            : realCompletedCount,
         };
       });
 
-      if (mapped.length === 0) {
-        setEmployees(demoPerformance);
-      } else {
-        setEmployees(mapped);
-      }
-    } catch (err) {
-      console.error("Failed to fetch employee performance metrics:", err);
-      setEmployees(demoPerformance);
+      setEmployees(mapped);
+    } catch (err: any) {
+      console.error("Failed to fetch real performance metrics:", err);
+      setError('Failed to load performance metrics from backend.');
     } finally {
       setLoading(false);
     }

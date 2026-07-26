@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { useAuth } from '../context/AuthContext';
 import { resolveDepartmentRoute } from '../utils/departmentUtils';
@@ -14,6 +14,9 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { login, isAuthenticated, user, userLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isExpired = location.search.includes('reason=expired');
 
   useEffect(() => {
     if (isAuthenticated && !userLoading && user) {
@@ -53,6 +56,12 @@ const LoginPage: React.FC = () => {
           <h3 className="fw-bold text-dark">Muin <span className="text-primary-green">ERP</span></h3>
           <p className="text-muted mt-2">Sign in to your account</p>
         </div>
+
+        {isExpired && !error && (
+          <div className="alert alert-warning py-2" role="alert" style={{ fontSize: '13.5px' }}>
+            <i className="fas fa-clock me-2 text-warning"></i>Your session expired due to inactivity. Please sign in again.
+          </div>
+        )}
 
         {error && (
           <div className="alert alert-danger py-2" role="alert" style={{ fontSize: '14px' }}>
