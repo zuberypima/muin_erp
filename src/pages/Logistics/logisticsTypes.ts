@@ -59,13 +59,16 @@ export interface MarineAsset {
 }
 
 export const SHIPPING_LINES = [
-  'MUIN Shipping Lines',
   'Maersk Line',
   'MSC (Mediterranean Shipping Co)',
   'CMA CGM',
+  'COSCO Shipping',
+  'Hapag-Lloyd',
   'Ocean Network Express (ONE)',
   'PIL (Pacific International Lines)',
-  'COSCO Shipping'
+  'Evergreen Line',
+  'HMM Co., Ltd.',
+  'Yang Ming Marine Transport'
 ];
 
 export const TERMINAL_YARDS = [

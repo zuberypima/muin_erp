@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api/axiosConfig';
 import { ContainerItem, SHIPPING_LINES, TERMINAL_YARDS } from './logisticsTypes';
 import { SkeletonTable } from '../../components/Skeleton';
+import ModalPortal from '../../components/ModalPortal';
 
 const LogisticsInventory: React.FC = () => {
   const [containers, setContainers] = useState<ContainerItem[]>([]);
@@ -224,73 +225,75 @@ const LogisticsInventory: React.FC = () => {
 
       {/* Modal */}
       {showAddModal && (
-        <div className="modal show d-block tab-fade" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content border-0 shadow">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title fw-bold">Log Container Gate-In Arrival</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={() => setShowAddModal(false)}></button>
-              </div>
-              <form onSubmit={handleAddContainer}>
-                <div className="modal-body">
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Container Number</label>
-                      <input type="text" className="form-control" required value={form.container_number} onChange={e => setForm({...form, container_number: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Size & Type</label>
-                      <select className="form-select" value={form.size_type} onChange={e => setForm({...form, size_type: e.target.value as any})}>
-                        <option value="20ft GP">20ft GP</option>
-                        <option value="40ft HC">40ft HC</option>
-                        <option value="40ft Reefer">40ft Reefer</option>
-                        <option value="45ft High Cube">45ft High Cube</option>
-                      </select>
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Shipping Line</label>
-                      <select className="form-select" value={form.shipping_line} onChange={e => setForm({...form, shipping_line: e.target.value})}>
-                        {SHIPPING_LINES.map(line => <option key={line} value={line}>{line}</option>)}
-                      </select>
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Bill of Lading #</label>
-                      <input type="text" className="form-control" required value={form.bill_of_lading} onChange={e => setForm({...form, bill_of_lading: e.target.value})} />
-                    </div>
-                    <div className="col-md-12">
-                      <label className="form-label fw-bold">Cargo Description</label>
-                      <input type="text" className="form-control" required value={form.cargo_description} onChange={e => setForm({...form, cargo_description: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Terminal Yard Location</label>
-                      <select className="form-select" value={form.terminal_yard} onChange={e => setForm({...form, terminal_yard: e.target.value})}>
-                        {TERMINAL_YARDS.map(yard => <option key={yard} value={yard}>{yard}</option>)}
-                      </select>
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Yard Slot Code</label>
-                      <input type="text" className="form-control" required value={form.yard_slot} onChange={e => setForm({...form, yard_slot: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Consignee</label>
-                      <input type="text" className="form-control" required value={form.consignee} onChange={e => setForm({...form, consignee: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Seal Number</label>
-                      <input type="text" className="form-control" required value={form.seal_number} onChange={e => setForm({...form, seal_number: e.target.value})} />
+        <ModalPortal>
+          <div className="modal show d-block tab-fade">
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content border-0 shadow-lg">
+                <div className="modal-header bg-primary text-white">
+                  <h5 className="modal-title fw-bold">Log Container Gate-In Arrival</h5>
+                  <button type="button" className="btn-close btn-close-white" onClick={() => setShowAddModal(false)}></button>
+                </div>
+                <form onSubmit={handleAddContainer}>
+                  <div className="modal-body">
+                    <div className="row g-3">
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Container Number</label>
+                        <input type="text" className="form-control" required value={form.container_number} onChange={e => setForm({...form, container_number: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Size & Type</label>
+                        <select className="form-select" value={form.size_type} onChange={e => setForm({...form, size_type: e.target.value as any})}>
+                          <option value="20ft GP">20ft GP</option>
+                          <option value="40ft HC">40ft HC</option>
+                          <option value="40ft Reefer">40ft Reefer</option>
+                          <option value="45ft High Cube">45ft High Cube</option>
+                        </select>
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Shipping Line</label>
+                        <select className="form-select" value={form.shipping_line} onChange={e => setForm({...form, shipping_line: e.target.value})}>
+                          {SHIPPING_LINES.map(line => <option key={line} value={line}>{line}</option>)}
+                        </select>
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Bill of Lading #</label>
+                        <input type="text" className="form-control" required value={form.bill_of_lading} onChange={e => setForm({...form, bill_of_lading: e.target.value})} />
+                      </div>
+                      <div className="col-md-12">
+                        <label className="form-label fw-bold">Cargo Description</label>
+                        <input type="text" className="form-control" required value={form.cargo_description} onChange={e => setForm({...form, cargo_description: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Terminal Yard Location</label>
+                        <select className="form-select" value={form.terminal_yard} onChange={e => setForm({...form, terminal_yard: e.target.value})}>
+                          {TERMINAL_YARDS.map(yard => <option key={yard} value={yard}>{yard}</option>)}
+                        </select>
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Yard Slot Code</label>
+                        <input type="text" className="form-control" required value={form.yard_slot} onChange={e => setForm({...form, yard_slot: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Consignee</label>
+                        <input type="text" className="form-control" required value={form.consignee} onChange={e => setForm({...form, consignee: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Seal Number</label>
+                        <input type="text" className="form-control" required value={form.seal_number} onChange={e => setForm({...form, seal_number: e.target.value})} />
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="modal-footer bg-light">
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>
-                    {saving ? 'Saving...' : 'Register Container Arrival'}
-                  </button>
-                </div>
-              </form>
+                  <div className="modal-footer bg-light">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
+                    <button type="submit" className="btn btn-primary" disabled={saving}>
+                      {saving ? 'Saving...' : 'Register Container Arrival'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );

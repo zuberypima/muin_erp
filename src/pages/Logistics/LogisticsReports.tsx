@@ -87,10 +87,10 @@ const LogisticsReports: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr><td>MUIN Shipping Lines</td><td className="fw-bold">12</td><td>14,500</td><td><span className="badge bg-success-subtle text-success">98.2%</span></td></tr>
-                    <tr><td>Maersk Line</td><td className="fw-bold">8</td><td>11,200</td><td><span className="badge bg-success-subtle text-success">96.5%</span></td></tr>
-                    <tr><td>MSC Container Line</td><td className="fw-bold">7</td><td>9,400</td><td><span className="badge bg-success-subtle text-success">95.0%</span></td></tr>
-                    <tr><td>CMA CGM</td><td className="fw-bold">5</td><td>7,750</td><td><span className="badge bg-info-subtle text-info">93.8%</span></td></tr>
+                    <tr><td>Maersk Line</td><td className="fw-bold">12</td><td>14,500</td><td><span className="badge bg-success-subtle text-success">98.2%</span></td></tr>
+                    <tr><td>MSC (Mediterranean Shipping Co)</td><td className="fw-bold">8</td><td>11,200</td><td><span className="badge bg-success-subtle text-success">96.5%</span></td></tr>
+                    <tr><td>CMA CGM</td><td className="fw-bold">7</td><td>9,400</td><td><span className="badge bg-success-subtle text-success">95.0%</span></td></tr>
+                    <tr><td>COSCO Shipping</td><td className="fw-bold">5</td><td>7,750</td><td><span className="badge bg-info-subtle text-info">93.8%</span></td></tr>
                   </tbody>
                 </table>
               </div>

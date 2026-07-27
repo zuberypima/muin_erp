@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api/axiosConfig';
 import { ContainerDispatch } from './logisticsTypes';
 import { SkeletonTable } from '../../components/Skeleton';
+import ModalPortal from '../../components/ModalPortal';
 
 const LogisticsDispatches: React.FC = () => {
   const [dispatches, setDispatches] = useState<ContainerDispatch[]>([]);
@@ -167,64 +168,66 @@ const LogisticsDispatches: React.FC = () => {
       </div>
 
       {showModal && (
-        <div className="modal show d-block tab-fade" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content border-0 shadow">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title fw-bold">Issue Inland Container Dispatch</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={() => setShowModal(false)}></button>
-              </div>
-              <form onSubmit={handleAddDispatch}>
-                <div className="modal-body">
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Container Number</label>
-                      <input type="text" className="form-control" required value={form.container_number} onChange={e => setForm({...form, container_number: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Bill of Lading #</label>
-                      <input type="text" className="form-control" required value={form.bill_of_lading} onChange={e => setForm({...form, bill_of_lading: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Shipper Name</label>
-                      <input type="text" className="form-control" required value={form.shipper} onChange={e => setForm({...form, shipper: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Consignee Name</label>
-                      <input type="text" className="form-control" required value={form.consignee} onChange={e => setForm({...form, consignee: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Destination City / Country</label>
-                      <input type="text" className="form-control" required value={form.destination_city} onChange={e => setForm({...form, destination_city: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Transport Mode</label>
-                      <select className="form-select" value={form.transport_mode} onChange={e => setForm({...form, transport_mode: e.target.value as any})}>
-                        <option value="Road Transport (Truck)">Road Transport (Truck)</option>
-                        <option value="Rail Freight (TAZARA)">Rail Freight (TAZARA)</option>
-                        <option value="Feeder Vessel">Feeder Vessel</option>
-                      </select>
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Truck Plate / Train Code</label>
-                      <input type="text" className="form-control" required value={form.truck_plate_or_train} onChange={e => setForm({...form, truck_plate_or_train: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Driver / Operator Name</label>
-                      <input type="text" className="form-control" required value={form.driver_name} onChange={e => setForm({...form, driver_name: e.target.value})} />
+        <ModalPortal>
+          <div className="modal show d-block tab-fade">
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content border-0 shadow-lg">
+                <div className="modal-header bg-primary text-white">
+                  <h5 className="modal-title fw-bold">Issue Inland Container Dispatch</h5>
+                  <button type="button" className="btn-close btn-close-white" onClick={() => setShowModal(false)}></button>
+                </div>
+                <form onSubmit={handleAddDispatch}>
+                  <div className="modal-body">
+                    <div className="row g-3">
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Container Number</label>
+                        <input type="text" className="form-control" required value={form.container_number} onChange={e => setForm({...form, container_number: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Bill of Lading #</label>
+                        <input type="text" className="form-control" required value={form.bill_of_lading} onChange={e => setForm({...form, bill_of_lading: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Shipper Name</label>
+                        <input type="text" className="form-control" required value={form.shipper} onChange={e => setForm({...form, shipper: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Consignee Name</label>
+                        <input type="text" className="form-control" required value={form.consignee} onChange={e => setForm({...form, consignee: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Destination City / Country</label>
+                        <input type="text" className="form-control" required value={form.destination_city} onChange={e => setForm({...form, destination_city: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Transport Mode</label>
+                        <select className="form-select" value={form.transport_mode} onChange={e => setForm({...form, transport_mode: e.target.value as any})}>
+                          <option value="Road Transport (Truck)">Road Transport (Truck)</option>
+                          <option value="Rail Freight (TAZARA)">Rail Freight (TAZARA)</option>
+                          <option value="Feeder Vessel">Feeder Vessel</option>
+                        </select>
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Truck Plate / Train Code</label>
+                        <input type="text" className="form-control" required value={form.truck_plate_or_train} onChange={e => setForm({...form, truck_plate_or_train: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Driver / Operator Name</label>
+                        <input type="text" className="form-control" required value={form.driver_name} onChange={e => setForm({...form, driver_name: e.target.value})} />
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="modal-footer bg-light">
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>
-                    {saving ? 'Issuing Pass...' : 'Issue Dispatch Pass'}
-                  </button>
-                </div>
-              </form>
+                  <div className="modal-footer bg-light">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                    <button type="submit" className="btn btn-primary" disabled={saving}>
+                      {saving ? 'Issuing Pass...' : 'Issue Dispatch Pass'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );

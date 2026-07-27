@@ -328,11 +328,6 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink to="/logistics/assets" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-truck-loading nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Fleet &amp; Equipment</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
                   <NavLink to="/logistics/reports" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
                     <i className="fas fa-chart-pie nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Analytics &amp; Reports</span>
                   </NavLink>

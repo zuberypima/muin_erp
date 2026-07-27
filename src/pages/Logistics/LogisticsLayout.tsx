@@ -9,10 +9,9 @@ const LogisticsLayout: React.FC = () => {
 
   const navItems = [
     { to: '/logistics', label: 'Port Overview', icon: 'fas fa-anchor', end: true },
-    { to: '/logistics/inventory', label: 'Container Yard Stock', icon: 'fas fa-boxes' },
+    { to: '/logistics/inventory', label: 'Total Containers', icon: 'fas fa-boxes' },
     { to: '/logistics/stock-tracking', label: 'Vessel Voyages', icon: 'fas fa-ship' },
     { to: '/logistics/dispatches', label: 'B/L & Dispatches', icon: 'fas fa-file-invoice' },
-    { to: '/logistics/assets', label: 'Marine Fleet & Cranes', icon: 'fas fa-truck-loading' },
     { to: '/logistics/reports', label: 'Shipping TEU Reports', icon: 'fas fa-chart-pie' },
   ];
 
@@ -25,10 +24,10 @@ const LogisticsLayout: React.FC = () => {
         <div>
           <div className="d-flex align-items-center gap-2">
             <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1" style={{ fontSize: '0.75rem' }}>
-              <i className="fas fa-ship me-1"></i>MARITIME &amp; CONTAINER SHIPPING
+              <i className="fas fa-ship me-1"></i>CONTAINER SHIPPING
             </span>
           </div>
-          <h2 className="fw-bold text-dark mb-1 mt-1">MARINE LOGISTICS &amp; PORT OPERATIONS</h2>
+          <h2 className="fw-bold text-dark mb-1 mt-1">LOGISTICS OPERATIONS</h2>
           <p className="text-muted mb-0 small"><i className="far fa-calendar-alt me-1"></i>{todayFormatted}</p>
         </div>
 

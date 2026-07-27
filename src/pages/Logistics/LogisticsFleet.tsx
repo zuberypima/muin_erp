@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api/axiosConfig';
 import { MarineAsset, TERMINAL_YARDS } from './logisticsTypes';
 import { SkeletonTable } from '../../components/Skeleton';
+import ModalPortal from '../../components/ModalPortal';
 
 const LogisticsFleet: React.FC = () => {
   const [assets, setAssets] = useState<MarineAsset[]>([]);
@@ -179,71 +180,77 @@ const LogisticsFleet: React.FC = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered modal-lg">
-            <div className="modal-content border-0 shadow" style={{ borderRadius: '16px' }}>
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-bold"><i className="fas fa-ship text-primary me-2"></i>Register Marine &amp; Port Asset</h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+        <ModalPortal>
+          <div className="modal show d-block tab-fade">
+            <div className="modal-dialog modal-dialog-centered modal-lg">
+              <div className="modal-content border-0 shadow-lg" style={{ borderRadius: '16px' }}>
+                <div className="modal-header border-0 pb-0">
+                  <h5 className="modal-title fw-bold"><i className="fas fa-ship text-primary me-2"></i>Register Marine &amp; Port Asset</h5>
+                  <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+                </div>
+                <form onSubmit={handleAddAsset}>
+                  <div className="modal-body row g-3">
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold">Asset Tag Code *</label>
+                      <input type="text" required className="form-control bg-light font-monospace" value={form.asset_tag} onChange={e => setForm({...form, asset_tag: e.target.value})} />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold">Equipment / Vessel Name *</label>
+                      <input type="text" required className="form-control bg-light" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Tugboat MUIN Protector 1" />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold">Asset Type</label>
+                      <select className="form-select bg-light" value={form.asset_type} onChange={e => setForm({...form, asset_type: e.target.value as any})}>
+                        <option value="Tugboat">Tugboat</option>
+                        <option value="Barge">Barge</option>
+                        <option value="Quay Crane (STS)">Quay Crane (STS)</option>
+                        <option value="RTG Crane">RTG Stacking Crane</option>
+                        <option value="Reach Stacker">Container Reach Stacker</option>
+                        <option value="Haulage Truck">Heavy Haulage Truck</option>
+                      </select>
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold">Registration Number / Reg Code</label>
+                      <input type="text" required className="form-control bg-light font-monospace" value={form.registration_number} onChange={e => setForm({...form, registration_number: e.target.value})} placeholder="e.g. TZ-TB-8812" />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold">Terminal Base Yard</label>
+                      <select className="form-select bg-light" value={form.terminal_base} onChange={e => setForm({...form, terminal_base: e.target.value})}>
+                        {TERMINAL_YARDS.map(y => <option key={y} value={y}>{y}</option>)}
+                      </select>
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold">Assigned Captain / Lead Operator</label>
+                      <input type="text" required className="form-control bg-light" value={form.operator_name} onChange={e => setForm({...form, operator_name: e.target.value})} />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold">Lifting / Towing Capacity</label>
+                      <input type="text" required className="form-control bg-light" value={form.capacity} onChange={e => setForm({...form, capacity: e.target.value})} placeholder="e.g. 60-Ton Bollard Pull" />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold">Operational Status</label>
+                      <select className="form-select bg-light" value={form.status} onChange={e => setForm({...form, status: e.target.value as any})}>
+                        <option value="operational">Operational</option>
+                        <option value="under-maintenance">Under Maintenance</option>
+                        <option value="dry-docking">Dry Docking</option>
+                      </select>
+                    </div>
+                    <div className="col-md-12">
+                      <label className="form-label small fw-semibold">Last Safety &amp; Drydock Inspection Date</label>
+                      <input type="date" required className="form-control bg-light" value={form.last_inspection} onChange={e => setForm({...form, last_inspection: e.target.value})} />
+                    </div>
+                  </div>
+                  <div className="modal-footer border-0 pt-0">
+                    <button type="button" className="btn btn-light fw-semibold" onClick={() => setShowModal(false)}>Cancel</button>
+                    <button type="submit" className="btn btn-primary fw-bold px-4" disabled={saving}>
+                      {saving ? 'Saving...' : 'Register Asset'}
+                    </button>
+                  </div>
+                </form>
               </div>
-              <form onSubmit={handleAddAsset}>
-                <div className="modal-body row g-3">
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold">Asset Tag Code *</label>
-                    <input type="text" required className="form-control bg-light font-monospace" value={form.asset_tag} onChange={e => setForm({...form, asset_tag: e.target.value})} />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold">Equipment / Vessel Name *</label>
-                    <input type="text" required className="form-control bg-light" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Tugboat MUIN Protector 1" />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold">Asset Type</label>
-                    <select className="form-select bg-light" value={form.asset_type} onChange={e => setForm({...form, asset_type: e.target.value as any})}>
-                      <option value="Tugboat">Tugboat</option>
-                      <option value="Barge">Barge</option>
-                      <option value="Quay Crane (STS)">Quay Crane (STS)</option>
-                      <option value="RTG Crane">RTG Stacking Crane</option>
-                      <option value="Reach Stacker">Container Reach Stacker</option>
-                      <option value="Haulage Truck">Heavy Haulage Truck</option>
-                    </select>
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold">Registration Number / Reg Code</label>
-                    <input type="text" required className="form-control bg-light font-monospace" value={form.registration_number} onChange={e => setForm({...form, registration_number: e.target.value})} placeholder="e.g. TZ-TB-8812" />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold">Terminal Base Yard</label>
-                    <select className="form-select bg-light" value={form.terminal_base} onChange={e => setForm({...form, terminal_base: e.target.value})}>
-                      {TERMINAL_YARDS.map(y => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold">Assigned Captain / Lead Operator</label>
-                    <input type="text" required className="form-control bg-light" value={form.operator_name} onChange={e => setForm({...form, operator_name: e.target.value})} />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold">Lifting / Towing Capacity</label>
-                    <input type="text" required className="form-control bg-light" value={form.capacity} onChange={e => setForm({...form, capacity: e.target.value})} placeholder="e.g. 60-Ton Bollard Pull" />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold">Operational Status</label>
-                    <select className="form-select bg-light" value={form.status} onChange={e => setForm({...form, status: e.target.value as any})}>
-                      <option value="operational">Operational</option>
-                      <option value="under-maintenance">Under Maintenance</option>
-                      <option value="dry-docking">Dry Docking</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="modal-footer border-0 pt-0">
-                  <button type="button" className="btn btn-light" onClick={() => setShowModal(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary text-white fw-bold px-4" disabled={saving}>
-                    {saving ? 'Registering...' : 'Register Asset'}
-                  </button>
-                </div>
-              </form>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );

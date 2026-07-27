@@ -45,7 +45,7 @@ const LogisticsDashboard: React.FC = () => {
   const operationalFleet = assets.length > 0 ? assets.length : 12;
 
   const mockVessels: VesselVoyage[] = vessels.length > 0 ? vessels : [
-    { id: 1, vessel_name: 'MV Muin Trader', imo_number: 'IMO 9812401', voyage_number: 'V.2026-04E', origin_port: 'Port of Singapore', destination_port: 'Port of Dar es Salaam', eta: '2026-07-25 08:00', etd: '2026-07-27 18:00', berth_no: 'Berth 04', total_teus: 2400, status: 'berthing-loading', shipping_line: 'MUIN Shipping Lines' },
+    { id: 1, vessel_name: 'MSC Gülsün', imo_number: 'IMO 9839430', voyage_number: 'V.2026-04E', origin_port: 'Port of Singapore', destination_port: 'Port of Dar es Salaam', eta: '2026-07-25 08:00', etd: '2026-07-27 18:00', berth_no: 'Berth 04', total_teus: 2400, status: 'berthing-loading', shipping_line: 'MSC (Mediterranean Shipping Co)' },
     { id: 2, vessel_name: 'CMA CGM Oceanus', imo_number: 'IMO 9741029', voyage_number: 'V.8802-W', origin_port: 'Dubai Jebel Ali', destination_port: 'Port of Zanzibar', eta: '2026-07-26 14:30', etd: '2026-07-28 12:00', berth_no: 'Berth 02', total_teus: 1850, status: 'at-anchor', shipping_line: 'CMA CGM' },
     { id: 3, vessel_name: 'Maersk Mc-Kinney', imo_number: 'IMO 9632064', voyage_number: 'V.9021-S', origin_port: 'Port of Shanghai', destination_port: 'Port of Dar es Salaam', eta: '2026-07-28 06:00', etd: '2026-07-30 20:00', berth_no: 'Berth 07', total_teus: 4200, status: 'sailing', shipping_line: 'Maersk Line' },
   ];
@@ -58,7 +58,7 @@ const LogisticsDashboard: React.FC = () => {
           <div className="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white border-start border-4 border-primary">
             <div className="d-flex justify-content-between align-items-center">
               <div>
-                <p className="text-muted small fw-semibold text-uppercase mb-1">Container Yard Stock</p>
+                <p className="text-muted small fw-semibold text-uppercase mb-1">Total Containers</p>
                 <h3 className="fw-bold text-dark mb-0">{totalTEUs.toLocaleString()} <span className="fs-6 fw-normal text-muted">TEUs</span></h3>
                 <span className="badge bg-primary-subtle text-primary mt-2">78% Yard Capacity</span>
               </div>
@@ -103,12 +103,12 @@ const LogisticsDashboard: React.FC = () => {
           <div className="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white border-start border-4 border-info">
             <div className="d-flex justify-content-between align-items-center">
               <div>
-                <p className="text-muted small fw-semibold text-uppercase mb-1">Port & Marine Fleet</p>
-                <h3 className="fw-bold text-dark mb-0">{operationalFleet} <span className="fs-6 fw-normal text-muted">Units</span></h3>
-                <span className="badge bg-info-subtle text-info mt-2">100% Operational</span>
+                <p className="text-muted small fw-semibold text-uppercase mb-1">Active Dispatches</p>
+                <h3 className="fw-bold text-dark mb-0">{dispatches.length > 0 ? dispatches.length : 18} <span className="fs-6 fw-normal text-muted">Shipments</span></h3>
+                <span className="badge bg-info-subtle text-info mt-2">In-Transit Passes</span>
               </div>
               <div className="bg-info text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style={{ width: '52px', height: '52px' }}>
-                <i className="fas fa-anchor fs-4"></i>
+                <i className="fas fa-truck-moving fs-4"></i>
               </div>
             </div>
           </div>

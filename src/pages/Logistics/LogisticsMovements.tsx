@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api/axiosConfig';
 import { VesselVoyage, SHIPPING_LINES, MAJOR_PORTS } from './logisticsTypes';
 import { SkeletonTable } from '../../components/Skeleton';
+import ModalPortal from '../../components/ModalPortal';
 
 const LogisticsMovements: React.FC = () => {
   const [vessels, setVessels] = useState<VesselVoyage[]>([]);
@@ -46,7 +47,7 @@ const LogisticsMovements: React.FC = () => {
 
       if (mapped.length === 0) {
         const demo: VesselVoyage[] = [
-          { id: 1, vessel_name: 'MV Muin Express', imo_number: 'IMO 9812401', voyage_number: 'V.2026-04E', origin_port: MAJOR_PORTS[5], destination_port: MAJOR_PORTS[0], eta: '2026-07-25 08:00', etd: '2026-07-27 18:00', berth_no: 'Berth 04', total_teus: 2800, status: 'berthing-loading', shipping_line: SHIPPING_LINES[0] },
+          { id: 1, vessel_name: 'MSC Irina', imo_number: 'IMO 9929429', voyage_number: 'V.2026-04E', origin_port: MAJOR_PORTS[5], destination_port: MAJOR_PORTS[0], eta: '2026-07-25 08:00', etd: '2026-07-27 18:00', berth_no: 'Berth 04', total_teus: 2800, status: 'berthing-loading', shipping_line: 'MSC (Mediterranean Shipping Co)' },
           { id: 2, vessel_name: 'CMA CGM Oceanus', imo_number: 'IMO 9741029', voyage_number: 'V.8802-W', origin_port: MAJOR_PORTS[6], destination_port: MAJOR_PORTS[1], eta: '2026-07-26 14:30', etd: '2026-07-28 12:00', berth_no: 'Berth 02', total_teus: 1850, status: 'at-anchor', shipping_line: 'CMA CGM' },
           { id: 3, vessel_name: 'Maersk Mc-Kinney', imo_number: 'IMO 9632064', voyage_number: 'V.9021-S', origin_port: MAJOR_PORTS[4], destination_port: MAJOR_PORTS[0], eta: '2026-07-28 06:00', etd: '2026-07-30 20:00', berth_no: 'Berth 07', total_teus: 4200, status: 'sailing', shipping_line: 'Maersk Line' },
         ];
@@ -173,67 +174,70 @@ const LogisticsMovements: React.FC = () => {
         )}
       </div>
 
+      {/* Modal */}
       {showModal && (
-        <div className="modal show d-block tab-fade" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content border-0 shadow">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title fw-bold">Schedule Vessel Arrival / Voyage</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={() => setShowModal(false)}></button>
-              </div>
-              <form onSubmit={handleAddVessel}>
-                <div className="modal-body">
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Vessel Name</label>
-                      <input type="text" className="form-control" required value={form.vessel_name} onChange={e => setForm({...form, vessel_name: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">IMO Number</label>
-                      <input type="text" className="form-control" required value={form.imo_number} onChange={e => setForm({...form, imo_number: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Voyage Number</label>
-                      <input type="text" className="form-control" required value={form.voyage_number} onChange={e => setForm({...form, voyage_number: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Shipping Line</label>
-                      <select className="form-select" value={form.shipping_line} onChange={e => setForm({...form, shipping_line: e.target.value})}>
-                        {SHIPPING_LINES.map(line => <option key={line} value={line}>{line}</option>)}
-                      </select>
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Origin Port</label>
-                      <select className="form-select" value={form.origin_port} onChange={e => setForm({...form, origin_port: e.target.value})}>
-                        {MAJOR_PORTS.map(p => <option key={p} value={p}>{p}</option>)}
-                      </select>
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Destination Port</label>
-                      <select className="form-select" value={form.destination_port} onChange={e => setForm({...form, destination_port: e.target.value})}>
-                        {MAJOR_PORTS.map(p => <option key={p} value={p}>{p}</option>)}
-                      </select>
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Berth Assigned</label>
-                      <input type="text" className="form-control" required value={form.berth_no} onChange={e => setForm({...form, berth_no: e.target.value})} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Total Cargo TEUs</label>
-                      <input type="number" className="form-control" required value={form.total_teus} onChange={e => setForm({...form, total_teus: Number(e.target.value)})} />
+        <ModalPortal>
+          <div className="modal show d-block tab-fade">
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content border-0 shadow-lg">
+                <div className="modal-header bg-primary text-white">
+                  <h5 className="modal-title fw-bold">Schedule Vessel Arrival / Voyage</h5>
+                  <button type="button" className="btn-close btn-close-white" onClick={() => setShowModal(false)}></button>
+                </div>
+                <form onSubmit={handleAddVessel}>
+                  <div className="modal-body">
+                    <div className="row g-3">
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Vessel Name</label>
+                        <input type="text" className="form-control" required value={form.vessel_name} onChange={e => setForm({...form, vessel_name: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">IMO Number</label>
+                        <input type="text" className="form-control" required value={form.imo_number} onChange={e => setForm({...form, imo_number: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Voyage Number</label>
+                        <input type="text" className="form-control" required value={form.voyage_number} onChange={e => setForm({...form, voyage_number: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Shipping Line</label>
+                        <select className="form-select" value={form.shipping_line} onChange={e => setForm({...form, shipping_line: e.target.value})}>
+                          {SHIPPING_LINES.map(line => <option key={line} value={line}>{line}</option>)}
+                        </select>
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Origin Port</label>
+                        <select className="form-select" value={form.origin_port} onChange={e => setForm({...form, origin_port: e.target.value})}>
+                          {MAJOR_PORTS.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Destination Port</label>
+                        <select className="form-select" value={form.destination_port} onChange={e => setForm({...form, destination_port: e.target.value})}>
+                          {MAJOR_PORTS.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Berth Assigned</label>
+                        <input type="text" className="form-control" required value={form.berth_no} onChange={e => setForm({...form, berth_no: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Total Cargo TEUs</label>
+                        <input type="number" className="form-control" required value={form.total_teus} onChange={e => setForm({...form, total_teus: Number(e.target.value)})} />
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="modal-footer bg-light">
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>
-                    {saving ? 'Scheduling...' : 'Save Voyage Schedule'}
-                  </button>
-                </div>
-              </form>
+                  <div className="modal-footer bg-light">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                    <button type="submit" className="btn btn-primary" disabled={saving}>
+                      {saving ? 'Scheduling...' : 'Save Voyage Schedule'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );
