@@ -13,14 +13,24 @@ const HRDashboard: React.FC = () => {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [empRes, attRes, leaveRes] = await Promise.all([
-          api.get('/hr/employees/'),
+        const [empRes, attRes, leaveRes] = await Promise.allSettled([
+          api.get('/hr/employees/').catch(() => api.get('/users/')),
           api.get(`/hr/attendance/?date=${today}`),
           api.get('/hr/leaves/'),
         ]);
-        setEmployees(empRes.data);
-        setTodayAttendance(attRes.data);
-        setLeaves(leaveRes.data);
+
+        if (empRes.status === 'fulfilled' && empRes.value.data) {
+          const empArr = Array.isArray(empRes.value.data) ? empRes.value.data : (empRes.value.data?.results || []);
+          setEmployees(empArr);
+        }
+        if (attRes.status === 'fulfilled' && attRes.value.data) {
+          const attArr = Array.isArray(attRes.value.data) ? attRes.value.data : (attRes.value.data?.results || []);
+          setTodayAttendance(attArr);
+        }
+        if (leaveRes.status === 'fulfilled' && leaveRes.value.data) {
+          const leaveArr = Array.isArray(leaveRes.value.data) ? leaveRes.value.data : (leaveRes.value.data?.results || []);
+          setLeaves(leaveArr);
+        }
       } catch (e) {
         console.error('HR Dashboard fetch error', e);
       } finally {
