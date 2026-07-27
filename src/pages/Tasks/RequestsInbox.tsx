@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/axiosConfig';
+import TaskDetailModal from './TaskDetailModal';
 
 interface UserDetail { id: number; uuid: string; username: string; email: string; }
 
@@ -23,6 +24,7 @@ type PageMode = 'approval' | 'assist';
 const RequestsInbox: React.FC<{ mode: PageMode }> = ({ mode }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [previewTask, setPreviewTask] = useState<Task | null>(null);
   const [actionTaskId, setActionTaskId] = useState<string | null>(null);
   const [actionNote, setActionNote] = useState('');
   const [actionResult, setActionResult] = useState<'approve' | 'reject' | 'in-progress' | null>(null);
@@ -149,16 +151,33 @@ const RequestsInbox: React.FC<{ mode: PageMode }> = ({ mode }) => {
               </thead>
               <tbody>
                 {tasks.map(task => (
-                  <tr key={task.id}>
+                  <tr key={task.id} className="clickable-row" onClick={() => setPreviewTask(task)} title="Click row to preview task details">
                     {/* Ticket */}
                     <td>
-                      <span className="fw-bold small" style={{ color: '#10b981' }}>#TSK-{task.ticket_number || 'N/A'}</span>
+                      <button
+                        className="btn btn-link p-0 fw-bold small text-decoration-none d-flex align-items-center gap-1"
+                        style={{ color: '#10b981' }}
+                        onClick={(e) => { e.stopPropagation(); setPreviewTask(task); }}
+                        title="Click to preview task details"
+                      >
+                        <i className="fas fa-search-plus" style={{ fontSize: '0.75rem' }}></i>
+                        #TSK-{task.ticket_number || 'N/A'}
+                      </button>
                     </td>
 
                     {/* Task */}
                     <td>
-                      <div className="fw-bold text-dark">{task.title}</div>
-                      <div className="text-muted" style={{ fontSize: '0.78rem', maxWidth: '200px' }}>
+                      <div className="d-flex align-items-center gap-1.5">
+                        <button
+                          className="btn btn-link p-0 fw-bold text-dark text-start text-decoration-none"
+                          onClick={(e) => { e.stopPropagation(); setPreviewTask(task); }}
+                          title="Click to preview task details"
+                        >
+                          {task.title}
+                        </button>
+                        <i className="fas fa-external-link-alt text-muted ms-1" style={{ fontSize: '0.68rem', opacity: 0.6 }} title="Clickable row"></i>
+                      </div>
+                      <div className="text-muted cursor-pointer" style={{ fontSize: '0.78rem', maxWidth: '200px' }}>
                         {(task.description || 'No description.').slice(0, 70)}{(task.description || '').length > 70 ? '…' : ''}
                       </div>
                     </td>
@@ -174,7 +193,7 @@ const RequestsInbox: React.FC<{ mode: PageMode }> = ({ mode }) => {
                       </div>
                       {task.assigned_by_detail && (
                         <div className="text-muted mt-1" style={{ fontSize: '0.72rem' }}>
-                          <i className="fas fa-user-edit me-1"></i>Created by: {task.assigned_by_detail.username}
+                          <i className="fas fa-user-edit me-1"></i>Assigned By: {task.assigned_by_detail.username}
                         </div>
                       )}
                     </td>
@@ -201,27 +220,28 @@ const RequestsInbox: React.FC<{ mode: PageMode }> = ({ mode }) => {
                     </td>
 
                     {/* Due Date */}
-                    <td className="text-muted small">{new Date(task.due_date).toLocaleDateString()}</td>
-
-                    {/* Remarks */}
                     <td>
-                      <div className="p-2 rounded-3" style={{ backgroundColor: '#f8fafc', borderLeft: `3px solid ${color}`, fontSize: '0.75rem', maxHeight: '80px', overflow: 'auto', whiteSpace: 'pre-line' }}>
-                        {task.remarks || <span className="text-muted">No notes provided.</span>}
+                      <div style={{ fontSize: '0.78rem' }} className="text-muted">
+                        <i className="far fa-calendar-alt me-1"></i>{new Date(task.due_date).toLocaleDateString()}
                       </div>
                     </td>
 
-                    {/* Action Panel */}
-                    <td className="text-end">
+                    {/* Notes / Remarks */}
+                    <td>
+                      <div style={{ fontSize: '0.75rem', maxHeight: '50px', overflow: 'hidden' }} className="text-muted">
+                        {task.remarks || 'No remarks.'}
+                      </div>
+                    </td>
+
+                    {/* Action */}
+                    <td className="text-end" onClick={(e) => e.stopPropagation()}>
                       {actionTaskId === task.id ? (
-                        <div className="text-start">
-                          {/* Resolution type buttons */}
+                        <div className="p-2 rounded-3 border bg-white shadow-sm" style={{ maxWidth: '280px' }}>
                           <div className="d-flex gap-1 mb-2 flex-wrap">
-                            {mode === 'approval' && (
-                              <button className={`btn btn-xs py-0 px-2 ${actionResult === 'approve' ? 'btn-success text-white' : 'btn-outline-success'}`}
-                                style={{ fontSize: '0.68rem' }} onClick={() => setActionResult('approve')}>
-                                ✅ Approve
-                              </button>
-                            )}
+                            <button className={`btn btn-xs py-0 px-2 ${actionResult === 'approve' ? 'btn-success text-white' : 'btn-outline-success'}`}
+                              style={{ fontSize: '0.68rem' }} onClick={() => setActionResult('approve')}>
+                              ✓ {mode === 'approval' ? 'Approve' : 'Resolve'}
+                            </button>
                             <button className={`btn btn-xs py-0 px-2 ${actionResult === 'in-progress' ? 'btn-primary text-white' : 'btn-outline-primary'}`}
                               style={{ fontSize: '0.68rem' }} onClick={() => setActionResult('in-progress')}>
                               🔄 Resume Work
@@ -251,12 +271,21 @@ const RequestsInbox: React.FC<{ mode: PageMode }> = ({ mode }) => {
                           </div>
                         </div>
                       ) : (
-                        <button className="btn btn-sm text-white fw-semibold px-3"
-                          style={{ backgroundColor: color, borderRadius: '8px' }}
-                          onClick={() => { setActionTaskId(task.id); setActionResult(null); setActionNote(''); }}>
-                          <i className={`fas ${mode === 'approval' ? 'fa-gavel' : 'fa-hands-helping'} me-1`}></i>
-                          {mode === 'approval' ? 'Review' : 'Respond'}
-                        </button>
+                        <div className="d-flex align-items-center justify-content-end gap-1.5">
+                          <button
+                            className="preview-row-btn"
+                            onClick={() => setPreviewTask(task)}
+                            title="Click to preview task details"
+                          >
+                            <i className="fas fa-eye"></i> View
+                          </button>
+                          <button className="btn btn-sm text-white fw-semibold px-3"
+                            style={{ backgroundColor: color, borderRadius: '8px' }}
+                            onClick={() => { setActionTaskId(task.id); setActionResult(null); setActionNote(''); }}>
+                            <i className={`fas ${mode === 'approval' ? 'fa-gavel' : 'fa-hands-helping'} me-1`}></i>
+                            {mode === 'approval' ? 'Review' : 'Respond'}
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -265,6 +294,15 @@ const RequestsInbox: React.FC<{ mode: PageMode }> = ({ mode }) => {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Task Preview Modal */}
+      {previewTask && (
+        <TaskDetailModal
+          task={previewTask}
+          onClose={() => setPreviewTask(null)}
+          onUpdate={fetchTasks}
+        />
       )}
     </div>
   );

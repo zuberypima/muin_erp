@@ -112,17 +112,32 @@
   border-bottom: 1px solid #f1f5f9;
 }
 
-.tasks-table tbody tr {
-  transition: background-color 0.2s ease;
+.tasks-table tbody tr.clickable-row {
+  cursor: pointer;
 }
 
-.tasks-table tbody tr:hover {
-  background-color: #f8fafc;
+.tasks-table tbody tr.clickable-row:hover {
+  background-color: #f0fdf4 !important;
 }
 
-.btn-xs {
-  padding: 0.15rem 0.4rem;
-  font-size: 0.7rem;
-  line-height: 1.2;
+.preview-row-btn {
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  border-radius: 6px;
+  padding: 0.25rem 0.65rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.preview-row-btn:hover {
+  background-color: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
 }
 

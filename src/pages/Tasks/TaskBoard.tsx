@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/axiosConfig';
 import CreateTaskModal from './CreateTaskModal.tsx';
+import TaskDetailModal from './TaskDetailModal.tsx';
 import './Tasks.css';
 
 interface UserDetail { id: number; uuid: string; username: string; email: string; }
@@ -29,6 +30,7 @@ const TaskBoard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'my' | 'assigned' | 'collaborating'>('all');
   const [showModal, setShowModal] = useState(false);
+  const [previewTask, setPreviewTask] = useState<Task | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -105,6 +107,7 @@ const TaskBoard: React.FC = () => {
       (t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
        (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
        (t.assigned_to_detail?.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+       (t.assigned_by_detail?.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
        String(t.ticket_number || '').includes(searchTerm)) &&
       (priorityFilter === 'All' || t.priority === priorityFilter) &&
       (statusFilter === 'All' || t.status === statusFilter) &&
@@ -228,27 +231,45 @@ const TaskBoard: React.FC = () => {
                     <th>Priority</th>
                     <th>Status</th>
                     <th>Dates</th>
-                    <th style={{ minWidth: '220px', borderTopRightRadius: '1rem' }}>Remarks</th>
+                    <th style={{ minWidth: '180px' }}>Remarks</th>
+                    <th className="text-end" style={{ borderTopRightRadius: '1rem', minWidth: '90px' }}>Preview</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map(task => (
-                    <tr key={task.id}>
+                    <tr key={task.id} className="clickable-row" onClick={() => setPreviewTask(task)} title="Click row to preview task details">
                       {/* Ticket */}
                       <td>
-                        <span className="fw-bold small" style={{ color: '#10b981' }}>#TSK-{task.ticket_number || 'N/A'}</span>
+                        <button
+                          className="btn btn-link p-0 fw-bold small text-decoration-none d-flex align-items-center gap-1"
+                          style={{ color: '#10b981' }}
+                          onClick={(e) => { e.stopPropagation(); setPreviewTask(task); }}
+                          title="Click to preview task details"
+                        >
+                          <i className="fas fa-search-plus" style={{ fontSize: '0.75rem' }}></i>
+                          #TSK-{task.ticket_number || 'N/A'}
+                        </button>
                       </td>
 
                       {/* Details */}
                       <td>
-                        <div className="fw-bold text-dark">{task.title}</div>
-                        <div className="text-muted" style={{ fontSize: '0.78rem', maxWidth: '220px' }} title={task.description}>
+                        <div className="d-flex align-items-center gap-1.5">
+                          <button
+                            className="btn btn-link p-0 fw-bold text-dark text-start text-decoration-none"
+                            onClick={(e) => { e.stopPropagation(); setPreviewTask(task); }}
+                            title="Click to preview task details"
+                          >
+                            {task.title}
+                          </button>
+                          <i className="fas fa-external-link-alt text-muted ms-1" style={{ fontSize: '0.68rem', opacity: 0.6 }} title="Clickable row"></i>
+                        </div>
+                        <div className="text-muted cursor-pointer" style={{ fontSize: '0.78rem', maxWidth: '220px' }} title={task.description}>
                           {(task.description || 'No description.').slice(0, 80)}{task.description && task.description.length > 80 ? '…' : ''}
                         </div>
                       </td>
 
                       {/* Assignee & Collaborators */}
-                      <td>
+                      <td onClick={(e) => e.stopPropagation()}>
                         <div className="d-flex align-items-center gap-2 mb-1">
                           <div className="task-avatar" title={task.assigned_to_detail?.username}>{getInitials(task.assigned_to_detail?.username)}</div>
                           <div>
@@ -256,6 +277,12 @@ const TaskBoard: React.FC = () => {
                             <div className="text-muted" style={{ fontSize: '0.68rem' }}>Assignee</div>
                           </div>
                         </div>
+                        {task.assigned_by_detail && (
+                          <div className="text-muted mb-1" style={{ fontSize: '0.72rem' }}>
+                            <i className="fas fa-user-edit me-1 text-secondary" style={{ fontSize: '0.65rem' }}></i>
+                            <span className="fw-medium">Assigned By:</span> <span className="text-dark fw-semibold">{task.assigned_by_detail.username}</span>
+                          </div>
+                        )}
                         {(task.collaborators_detail || []).length > 0 && (
                           <div className="d-flex flex-wrap gap-1 mt-1">
                             {task.collaborators_detail!.map(c => (
@@ -264,14 +291,14 @@ const TaskBoard: React.FC = () => {
                                 <span className="task-avatar" style={{ width: '16px', height: '16px', fontSize: '0.55rem' }}>{getInitials(c.username)}</span>
                                 {c.username}
                                 {task.status !== 'Completed' && (
-                                  <button className="btn-close" style={{ fontSize: '0.4rem' }} onClick={() => removeCollaborator(task.id, String(c.id))} title="Remove collaborator" />
+                                  <button className="btn-close" style={{ fontSize: '0.4rem' }} onClick={(e) => { e.stopPropagation(); removeCollaborator(task.id, String(c.id)); }} title="Remove collaborator" />
                                 )}
                               </span>
                             ))}
                           </div>
                         )}
                         {task.status !== 'Completed' && (
-                          <button className="btn btn-link btn-sm p-0 mt-1 text-muted" style={{ fontSize: '0.72rem' }} onClick={() => { setActionModal({ task, type: 'collaborate' }); setSelectedUserId(''); }}>
+                          <button className="btn btn-link btn-sm p-0 mt-1 text-muted" style={{ fontSize: '0.72rem' }} onClick={(e) => { e.stopPropagation(); setActionModal({ task, type: 'collaborate' }); setSelectedUserId(''); }}>
                             <i className="fas fa-user-plus me-1"></i>Add collaborator
                           </button>
                         )}
@@ -283,7 +310,7 @@ const TaskBoard: React.FC = () => {
                       </td>
 
                       {/* Status */}
-                      <td>
+                      <td onClick={(e) => e.stopPropagation()}>
                         <div className="d-flex align-items-center gap-1 flex-wrap">
                           <span className="badge border" style={{ ...getStatusStyle(task.status), borderRadius: '6px', fontSize: '0.72rem' }}>{task.status}</span>
                           {task.status !== 'Completed' && (
@@ -300,15 +327,15 @@ const TaskBoard: React.FC = () => {
                         {task.status !== 'Completed' && (
                           <div className="d-flex gap-1 mt-1 flex-wrap">
                             <button className="btn btn-xs py-0 px-1 text-white" style={{ fontSize: '0.65rem', backgroundColor: '#7c3aed', borderRadius: '4px' }}
-                              onClick={() => { setActionModal({ task, type: 'request' }); setRequestType('approval'); setRequestNote(''); }}>
+                              onClick={(e) => { e.stopPropagation(); setActionModal({ task, type: 'request' }); setRequestType('approval'); setRequestNote(''); }}>
                               ✋ Approval
                             </button>
                             <button className="btn btn-xs py-0 px-1 text-white" style={{ fontSize: '0.65rem', backgroundColor: '#ea580c', borderRadius: '4px' }}
-                              onClick={() => { setActionModal({ task, type: 'request' }); setRequestType('assist'); setRequestNote(''); }}>
+                              onClick={(e) => { e.stopPropagation(); setActionModal({ task, type: 'request' }); setRequestType('assist'); setRequestNote(''); }}>
                               🆘 Assist
                             </button>
                             <button className="btn btn-xs py-0 px-1 text-white" style={{ fontSize: '0.65rem', backgroundColor: '#0369a1', borderRadius: '4px' }}
-                              onClick={() => { setActionModal({ task, type: 'reassign' }); setSelectedUserId(''); }}>
+                              onClick={(e) => { e.stopPropagation(); setActionModal({ task, type: 'reassign' }); setSelectedUserId(''); }}>
                               🔁 Handoff
                             </button>
                           </div>
@@ -327,7 +354,7 @@ const TaskBoard: React.FC = () => {
                       </td>
 
                       {/* Remarks */}
-                      <td>
+                      <td onClick={(e) => e.stopPropagation()}>
                         <div className="p-2 rounded-3" style={{ backgroundColor: '#f8fafc', borderLeft: '3px solid #10b981' }}>
                           <div className="d-flex justify-content-between mb-1">
                             <strong style={{ fontSize: '0.7rem' }}>Notes</strong>
@@ -354,6 +381,17 @@ const TaskBoard: React.FC = () => {
                           )}
                         </div>
                       </td>
+
+                      {/* Action / Preview Button Column */}
+                      <td className="text-end" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          className="preview-row-btn"
+                          onClick={() => setPreviewTask(task)}
+                          title="Click to preview complete task details"
+                        >
+                          <i className="fas fa-eye"></i> View
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -361,6 +399,15 @@ const TaskBoard: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Task Details Preview Modal */}
+      {previewTask && (
+        <TaskDetailModal
+          task={previewTask}
+          onClose={() => setPreviewTask(null)}
+          onUpdate={fetchTasks}
+        />
       )}
 
       {/* Create Task Modal */}

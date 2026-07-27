@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import IdleTimerManager from './components/IdleTimerManager';
 import TaskBoard from './pages/Tasks/TaskBoard';
+import TaskDetailPage from './pages/Tasks/TaskDetailPage';
 import RequestsInbox from './pages/Tasks/RequestsInbox';
 import ERPUsers from './pages/ERPUsers.tsx';
 import FinanceLayout from './pages/Finance/FinanceLayout';
@@ -53,7 +54,6 @@ import LogisticsDashboard from './pages/Logistics/LogisticsDashboard';
 import LogisticsInventory from './pages/Logistics/LogisticsInventory';
 import LogisticsMovements from './pages/Logistics/LogisticsMovements';
 import LogisticsDispatches from './pages/Logistics/LogisticsDispatches';
-import LogisticsFleet from './pages/Logistics/LogisticsFleet';
 import LogisticsReports from './pages/Logistics/LogisticsReports';
 
 // Records & Asset Management Module
@@ -96,6 +96,7 @@ const App: React.FC = () => {
               <Route index element={<RootRedirect />} />
               <Route path="services" element={<ServicePage />} />
               <Route path="tasks" element={<TaskBoard />} />
+              <Route path="tasks/:taskId" element={<TaskDetailPage />} />
               <Route path="tasks/approvals" element={<RequestsInbox mode="approval" />} />
               <Route path="tasks/assist" element={<RequestsInbox mode="assist" />} />
               <Route path="erp-users" element={<ERPUsers />} />
@@ -117,6 +118,7 @@ const App: React.FC = () => {
                 <Route index element={<HRDashboard />} />
                 <Route path="employees" element={<Employees />} />
                 <Route path="tasks" element={<TaskBoard />} />
+                <Route path="tasks/:taskId" element={<TaskDetailPage />} />
                 <Route path="attendance" element={<Attendance />} />
                 <Route path="leaves" element={<Leaves />} />
                 <Route path="performance" element={<Performance />} />

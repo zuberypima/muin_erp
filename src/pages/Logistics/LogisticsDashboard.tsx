@@ -104,8 +104,8 @@ const LogisticsDashboard: React.FC = () => {
             <div className="d-flex justify-content-between align-items-center">
               <div>
                 <p className="text-muted small fw-semibold text-uppercase mb-1">Active Dispatches</p>
-                <h3 className="fw-bold text-dark mb-0">{dispatches.length > 0 ? dispatches.length : 18} <span className="fs-6 fw-normal text-muted">Shipments</span></h3>
-                <span className="badge bg-info-subtle text-info mt-2">In-Transit Passes</span>
+                <h3 className="fw-bold text-dark mb-0">{activeDispatches} <span className="fs-6 fw-normal text-muted">Shipments</span></h3>
+                <span className="badge bg-info-subtle text-info mt-2">{operationalFleet} Fleet Units Active</span>
               </div>
               <div className="bg-info text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style={{ width: '52px', height: '52px' }}>
                 <i className="fas fa-truck-moving fs-4"></i>
