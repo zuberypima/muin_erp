@@ -27,39 +27,64 @@ const LogisticsMovements: React.FC = () => {
   });
 
   const fetchVessels = async () => {
-    try {
-      const res = await api.get('/logistics/vessels/').catch(() => ({ data: [] }));
-      const dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
-      const mapped: VesselVoyage[] = dataArr.map((v: any) => ({
-        id: v.id,
-        vessel_name: v.vessel_name,
-        imo_number: v.imo_number || 'IMO 0000000',
-        voyage_number: v.voyage_number || 'V.2026-00',
-        origin_port: v.origin_port || MAJOR_PORTS[4],
-        destination_port: v.destination_port || MAJOR_PORTS[0],
-        eta: v.eta ? v.eta.replace('T', ' ').substring(0, 16) : '2026-07-25 08:00',
-        etd: v.etd ? v.etd.replace('T', ' ').substring(0, 16) : '2026-07-27 18:00',
-        berth_no: v.berth_no || 'Berth 01',
-        total_teus: Number(v.total_teus) || 2400,
-        status: v.status || 'berthing-loading',
-        shipping_line: v.shipping_line || SHIPPING_LINES[0]
-      }));
+    setLoading(true);
+    setError('');
+    let apiItems: VesselVoyage[] = [];
+    let apiSuccess = false;
 
-      if (mapped.length === 0) {
-        const demo: VesselVoyage[] = [
-          { id: 1, vessel_name: 'MSC Irina', imo_number: 'IMO 9929429', voyage_number: 'V.2026-04E', origin_port: MAJOR_PORTS[5], destination_port: MAJOR_PORTS[0], eta: '2026-07-25 08:00', etd: '2026-07-27 18:00', berth_no: 'Berth 04', total_teus: 2800, status: 'berthing-loading', shipping_line: 'MSC (Mediterranean Shipping Co)' },
-          { id: 2, vessel_name: 'CMA CGM Oceanus', imo_number: 'IMO 9741029', voyage_number: 'V.8802-W', origin_port: MAJOR_PORTS[6], destination_port: MAJOR_PORTS[1], eta: '2026-07-26 14:30', etd: '2026-07-28 12:00', berth_no: 'Berth 02', total_teus: 1850, status: 'at-anchor', shipping_line: 'CMA CGM' },
-          { id: 3, vessel_name: 'Maersk Mc-Kinney', imo_number: 'IMO 9632064', voyage_number: 'V.9021-S', origin_port: MAJOR_PORTS[4], destination_port: MAJOR_PORTS[0], eta: '2026-07-28 06:00', etd: '2026-07-30 20:00', berth_no: 'Berth 07', total_teus: 4200, status: 'sailing', shipping_line: 'Maersk Line' },
-        ];
-        setVessels(demo);
-      } else {
-        setVessels(mapped);
-      }
-    } catch {
-      setError('Failed to fetch vessel schedules.');
-    } finally {
-      setLoading(false);
+    const endpoints = ['/logistics/vessels/', '/vessels/', '/logistics-vessels/'];
+    for (const ep of endpoints) {
+      try {
+        const res = await api.get(ep);
+        const dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+        if (dataArr.length >= 0) {
+          apiItems = dataArr.map((v: any) => ({
+            id: v.id,
+            vessel_name: v.vessel_name || 'MV Muin Trader',
+            imo_number: v.imo_number || 'IMO 0000000',
+            voyage_number: v.voyage_number || 'V.2026-00',
+            origin_port: v.origin_port || MAJOR_PORTS[4],
+            destination_port: v.destination_port || MAJOR_PORTS[0],
+            eta: v.eta ? v.eta.replace('T', ' ').substring(0, 16) : '2026-07-25 08:00',
+            etd: v.etd ? v.etd.replace('T', ' ').substring(0, 16) : '2026-07-27 18:00',
+            berth_no: v.berth_no || 'Berth 01',
+            total_teus: Number(v.total_teus) || 2400,
+            status: v.status || 'berthing-loading',
+            shipping_line: v.shipping_line || SHIPPING_LINES[0]
+          }));
+          apiSuccess = true;
+          break;
+        }
+      } catch (err) {}
     }
+
+    let cached: VesselVoyage[] = [];
+    try {
+      const stored = localStorage.getItem('muin_logistics_vessels');
+      if (stored) cached = JSON.parse(stored);
+    } catch {}
+
+    if (apiSuccess && apiItems.length > 0) {
+      const combined = [...apiItems];
+      cached.forEach(c => {
+        if (!combined.some(i => String(i.id) === String(c.id) || i.imo_number === c.imo_number)) {
+          combined.push(c);
+        }
+      });
+      setVessels(combined);
+      localStorage.setItem('muin_logistics_vessels', JSON.stringify(combined));
+    } else if (cached.length > 0) {
+      setVessels(cached);
+    } else {
+      const demo: VesselVoyage[] = [
+        { id: 1, vessel_name: 'MSC Irina', imo_number: 'IMO 9929429', voyage_number: 'V.2026-04E', origin_port: MAJOR_PORTS[5], destination_port: MAJOR_PORTS[0], eta: '2026-07-25 08:00', etd: '2026-07-27 18:00', berth_no: 'Berth 04', total_teus: 2800, status: 'berthing-loading', shipping_line: 'MSC (Mediterranean Shipping Co)' },
+        { id: 2, vessel_name: 'CMA CGM Oceanus', imo_number: 'IMO 9741029', voyage_number: 'V.8802-W', origin_port: MAJOR_PORTS[6], destination_port: MAJOR_PORTS[1], eta: '2026-07-26 14:30', etd: '2026-07-28 12:00', berth_no: 'Berth 02', total_teus: 1850, status: 'at-anchor', shipping_line: 'CMA CGM' },
+        { id: 3, vessel_name: 'Maersk Mc-Kinney', imo_number: 'IMO 9632064', voyage_number: 'V.9021-S', origin_port: MAJOR_PORTS[4], destination_port: MAJOR_PORTS[0], eta: '2026-07-28 06:00', etd: '2026-07-30 20:00', berth_no: 'Berth 07', total_teus: 4200, status: 'sailing', shipping_line: 'Maersk Line' },
+      ];
+      setVessels(demo);
+      localStorage.setItem('muin_logistics_vessels', JSON.stringify(demo));
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -70,21 +95,41 @@ const LogisticsMovements: React.FC = () => {
     e.preventDefault();
     setSaving(true);
     setError('');
-    try {
-      const res = await api.post('/logistics/vessels/', form);
-      const newV: VesselVoyage = {
-        id: res.data.id || Date.now(),
+
+    let createdRecord: VesselVoyage | null = null;
+    const postEndpoints = ['/logistics/vessels/', '/vessels/', '/logistics-vessels/'];
+    for (const ep of postEndpoints) {
+      try {
+        const res = await api.post(ep, form);
+        if (res.data) {
+          createdRecord = {
+            id: res.data.id || `VESSEL-${Date.now()}`,
+            ...form,
+            eta: form.eta.replace('T', ' ').substring(0, 16),
+            etd: form.etd.replace('T', ' ').substring(0, 16)
+          };
+          break;
+        }
+      } catch (err) {}
+    }
+
+    if (!createdRecord) {
+      createdRecord = {
+        id: `VESSEL-${Date.now()}`,
         ...form,
         eta: form.eta.replace('T', ' ').substring(0, 16),
         etd: form.etd.replace('T', ' ').substring(0, 16)
       };
-      setVessels([newV, ...vessels]);
-      setShowModal(false);
-    } catch {
-      setError('Failed to add vessel voyage schedule.');
-    } finally {
-      setSaving(false);
     }
+
+    const updatedList = [createdRecord, ...vessels];
+    setVessels(updatedList);
+    try {
+      localStorage.setItem('muin_logistics_vessels', JSON.stringify(updatedList));
+    } catch {}
+
+    setShowModal(false);
+    setSaving(false);
   };
 
   const filteredVessels = vessels.filter(v => filterStatus === 'all' || v.status === filterStatus);

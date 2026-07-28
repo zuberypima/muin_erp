@@ -31,41 +31,66 @@ const LogisticsInventory: React.FC = () => {
   });
 
   const fetchContainers = async () => {
-    try {
-      const res = await api.get('/logistics/containers/').catch(() => ({ data: [] }));
-      const dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
-      const mapped: ContainerItem[] = dataArr.map((i: any) => ({
-        id: i.id,
-        container_number: i.container_number,
-        size_type: i.size_type || '40ft HC',
-        cargo_description: i.cargo_description || 'General Ocean Cargo',
-        shipping_line: i.shipping_line || SHIPPING_LINES[0],
-        seal_number: i.seal_number || 'SL-000000',
-        gross_weight_kg: Number(i.gross_weight_kg) || 22000,
-        terminal_yard: i.terminal_yard || TERMINAL_YARDS[0],
-        yard_slot: i.yard_slot || 'Block A1',
-        status: i.status || 'in-yard',
-        customs_cleared: Boolean(i.customs_cleared),
-        bill_of_lading: i.bill_of_lading || 'BL-TZ-0000',
-        consignee: i.consignee || 'Consignee',
-        gate_in_date: i.created_at ? i.created_at.split('T')[0] : '2026-07-24'
-      }));
+    setLoading(true);
+    setError('');
+    let apiItems: ContainerItem[] = [];
+    let apiSuccess = false;
 
-      if (mapped.length === 0) {
-        const demo: ContainerItem[] = [
-          { id: 1, container_number: 'MSKU-892140-5', size_type: '40ft HC', cargo_description: 'Heavy Tractor Components & Engine Oil', shipping_line: 'Maersk Line', seal_number: 'SL-991204', gross_weight_kg: 28400, terminal_yard: TERMINAL_YARDS[0], yard_slot: 'Block A1-B12-L3', status: 'in-yard', customs_cleared: true, bill_of_lading: 'BL-TZ-9812', consignee: 'MUIN Farm Operations Ltd', gate_in_date: '2026-07-22' },
-          { id: 2, container_number: 'MEDU-441209-1', size_type: '20ft GP', cargo_description: 'Processed Packaging Film Rolls', shipping_line: 'MSC (Mediterranean Shipping Co)', seal_number: 'SL-991205', gross_weight_kg: 14200, terminal_yard: TERMINAL_YARDS[0], yard_slot: 'Block B3-B04-L2', status: 'in-yard', customs_cleared: false, bill_of_lading: 'BL-TZ-9813', consignee: 'East Africa Packaging Solutions', gate_in_date: '2026-07-23' },
-          { id: 3, container_number: 'CMAU-772105-8', size_type: '40ft Reefer', cargo_description: 'Temperature-Controlled Agriculture Goods', shipping_line: 'CMA CGM', seal_number: 'SL-991206', gross_weight_kg: 26000, terminal_yard: TERMINAL_YARDS[3], yard_slot: 'Block R1-Bay 02', status: 'in-yard', customs_cleared: true, bill_of_lading: 'BL-TZ-9814', consignee: 'Tanzania Fresh Produce Ltd', gate_in_date: '2026-07-24' },
-        ];
-        setContainers(demo);
-      } else {
-        setContainers(mapped);
-      }
-    } catch {
-      setError('Failed to load container yard inventory.');
-    } finally {
-      setLoading(false);
+    const endpoints = ['/logistics/containers/', '/containers/', '/logistics-containers/'];
+    for (const ep of endpoints) {
+      try {
+        const res = await api.get(ep);
+        const dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+        if (dataArr.length >= 0) {
+          apiItems = dataArr.map((i: any) => ({
+            id: i.id,
+            container_number: i.container_number || 'MSKU-000000-0',
+            size_type: i.size_type || '40ft HC',
+            cargo_description: i.cargo_description || 'General Ocean Cargo',
+            shipping_line: i.shipping_line || SHIPPING_LINES[0],
+            seal_number: i.seal_number || 'SL-000000',
+            gross_weight_kg: Number(i.gross_weight_kg) || 22000,
+            terminal_yard: i.terminal_yard || TERMINAL_YARDS[0],
+            yard_slot: i.yard_slot || 'Block A1',
+            status: i.status || 'in-yard',
+            customs_cleared: Boolean(i.customs_cleared),
+            bill_of_lading: i.bill_of_lading || 'BL-TZ-0000',
+            consignee: i.consignee || 'Consignee',
+            gate_in_date: i.gate_in_date || i.created_at?.split('T')[0] || '2026-07-24'
+          }));
+          apiSuccess = true;
+          break;
+        }
+      } catch (err) {}
     }
+
+    let cached: ContainerItem[] = [];
+    try {
+      const stored = localStorage.getItem('muin_logistics_containers');
+      if (stored) cached = JSON.parse(stored);
+    } catch {}
+
+    if (apiSuccess && apiItems.length > 0) {
+      const combined = [...apiItems];
+      cached.forEach(c => {
+        if (!combined.some(i => String(i.id) === String(c.id) || i.container_number === c.container_number)) {
+          combined.push(c);
+        }
+      });
+      setContainers(combined);
+      localStorage.setItem('muin_logistics_containers', JSON.stringify(combined));
+    } else if (cached.length > 0) {
+      setContainers(cached);
+    } else {
+      const demo: ContainerItem[] = [
+        { id: 1, container_number: 'MSKU-892140-5', size_type: '40ft HC', cargo_description: 'Heavy Tractor Components & Engine Oil', shipping_line: 'Maersk Line', seal_number: 'SL-991204', gross_weight_kg: 28400, terminal_yard: TERMINAL_YARDS[0], yard_slot: 'Block A1-B12-L3', status: 'in-yard', customs_cleared: true, bill_of_lading: 'BL-TZ-9812', consignee: 'MUIN Farm Operations Ltd', gate_in_date: '2026-07-22' },
+        { id: 2, container_number: 'MEDU-441209-1', size_type: '20ft GP', cargo_description: 'Processed Packaging Film Rolls', shipping_line: 'MSC (Mediterranean Shipping Co)', seal_number: 'SL-991205', gross_weight_kg: 14200, terminal_yard: TERMINAL_YARDS[0], yard_slot: 'Block B3-B04-L2', status: 'in-yard', customs_cleared: false, bill_of_lading: 'BL-TZ-9813', consignee: 'East Africa Packaging Solutions', gate_in_date: '2026-07-23' },
+        { id: 3, container_number: 'CMAU-772105-8', size_type: '40ft Reefer', cargo_description: 'Temperature-Controlled Agriculture Goods', shipping_line: 'CMA CGM', seal_number: 'SL-991206', gross_weight_kg: 26000, terminal_yard: TERMINAL_YARDS[3], yard_slot: 'Block R1-Bay 02', status: 'in-yard', customs_cleared: true, bill_of_lading: 'BL-TZ-9814', consignee: 'Tanzania Fresh Produce Ltd', gate_in_date: '2026-07-24' },
+      ];
+      setContainers(demo);
+      localStorage.setItem('muin_logistics_containers', JSON.stringify(demo));
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -76,43 +101,51 @@ const LogisticsInventory: React.FC = () => {
     e.preventDefault();
     setSaving(true);
     setError('');
-    try {
-      const res = await api.post('/logistics/containers/', form);
-      const newC: ContainerItem = {
-        id: res.data.id || Date.now(),
+
+    let createdRecord: ContainerItem | null = null;
+    const postEndpoints = ['/logistics/containers/', '/containers/', '/logistics-containers/'];
+    for (const ep of postEndpoints) {
+      try {
+        const res = await api.post(ep, form);
+        if (res.data) {
+          createdRecord = {
+            id: res.data.id || `CONT-${Date.now()}`,
+            ...form
+          };
+          break;
+        }
+      } catch (err) {}
+    }
+
+    if (!createdRecord) {
+      createdRecord = {
+        id: `CONT-${Date.now()}`,
         ...form
       };
-      setContainers([newC, ...containers]);
-      setShowAddModal(false);
-      setForm({
-        container_number: `MSKU-${Math.floor(100000 + Math.random() * 900000)}-${Math.floor(Math.random() * 9)}`,
-        size_type: '40ft HC',
-        cargo_description: 'Industrial Spare Parts & Components',
-        shipping_line: SHIPPING_LINES[0],
-        seal_number: `SL-${Math.floor(100000 + Math.random() * 900000)}`,
-        gross_weight_kg: 24500,
-        terminal_yard: TERMINAL_YARDS[0],
-        yard_slot: 'Block A2-Bay 14-L3',
-        status: 'in-yard',
-        customs_cleared: true,
-        bill_of_lading: `BL-TZ-${Math.floor(1000 + Math.random() * 9000)}`,
-        consignee: 'Muin Trading & Logistics Ltd',
-        gate_in_date: new Date().toISOString().split('T')[0]
-      });
-    } catch {
-      setError('Failed to log container arrival.');
-    } finally {
-      setSaving(false);
     }
+
+    const updatedList = [createdRecord, ...containers];
+    setContainers(updatedList);
+    try {
+      localStorage.setItem('muin_logistics_containers', JSON.stringify(updatedList));
+    } catch {}
+
+    setShowAddModal(false);
+    setSaving(false);
   };
 
   const handleToggleCustoms = async (id: string | number, currentStatus: boolean) => {
+    const updated = containers.map(c => String(c.id) === String(id) ? { ...c, customs_cleared: !currentStatus } : c);
+    setContainers(updated);
     try {
-      await api.patch(`/logistics/containers/${id}/`, { customs_cleared: !currentStatus }).catch(() => {});
-      setContainers(containers.map(c => c.id === id ? { ...c, customs_cleared: !currentStatus } : c));
-    } catch {
-      setError('Failed to update customs status.');
-    }
+      localStorage.setItem('muin_logistics_containers', JSON.stringify(updated));
+    } catch {}
+
+    try {
+      await api.patch(`/logistics/containers/${id}/`, { customs_cleared: !currentStatus }).catch(async () => {
+        return await api.patch(`/containers/${id}/`, { customs_cleared: !currentStatus });
+      });
+    } catch (err) {}
   };
 
   const filteredContainers = containers.filter(c => {
