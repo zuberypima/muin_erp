@@ -3,6 +3,8 @@ import api from '../../api/axiosConfig';
 import { ContainerItem, SHIPPING_LINES, TERMINAL_YARDS } from './logisticsTypes';
 import { SkeletonTable } from '../../components/Skeleton';
 import ModalPortal from '../../components/ModalPortal';
+import ContainerDetailModal from './ContainerDetailModal';
+import '../Tasks/Tasks.css';
 
 const LogisticsInventory: React.FC = () => {
   const [containers, setContainers] = useState<ContainerItem[]>([]);
@@ -11,6 +13,7 @@ const LogisticsInventory: React.FC = () => {
   const [shippingFilter, setShippingFilter] = useState('all');
   const [yardFilter, setYardFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [previewContainer, setPreviewContainer] = useState<ContainerItem | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -167,13 +170,18 @@ const LogisticsInventory: React.FC = () => {
             <h5 className="fw-bold text-dark mb-1">Container Terminal Yard Inventory</h5>
             <p className="text-muted small mb-0">Track container slots, B/L numbers, seal codes, gross weights, and TRA customs releases.</p>
           </div>
-          <button
-            className="btn btn-primary text-white fw-bold px-3 shadow-sm"
-            onClick={() => setShowAddModal(true)}
-            style={{ borderRadius: '8px' }}
-          >
-            <i className="fas fa-box me-2"></i>Log Container Gate In
-          </button>
+          <div className="d-flex gap-2">
+            <button className="btn btn-outline-secondary btn-sm px-3" onClick={fetchContainers} title="Refresh Containers from Server">
+              <i className="fas fa-sync-alt me-1"></i>Refresh
+            </button>
+            <button
+              className="btn btn-primary text-white fw-bold px-3 shadow-sm"
+              onClick={() => setShowAddModal(true)}
+              style={{ borderRadius: '8px' }}
+            >
+              <i className="fas fa-box me-2"></i>Log Container Gate In
+            </button>
+          </div>
         </div>
 
         {/* Filter Bar */}
@@ -203,11 +211,11 @@ const LogisticsInventory: React.FC = () => {
           </div>
         </div>
 
-        {error && <div className="alert alert-danger py-2">{error}</div>}
+        {error && <div className="alert alert-danger py-2 small">{error}</div>}
 
         {/* Table */}
         {loading ? (
-          <SkeletonTable rows={5} cols={8} />
+          <SkeletonTable rows={5} cols={9} />
         ) : (
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0" style={{ fontSize: '14px' }}>
@@ -221,35 +229,68 @@ const LogisticsInventory: React.FC = () => {
                   <th>Bill of Lading</th>
                   <th>Consignee</th>
                   <th>Customs Status</th>
+                  <th className="text-end pe-3" style={{ minWidth: '90px' }}>Preview</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredContainers.map(c => (
-                  <tr key={c.id}>
-                    <td className="fw-bold text-dark">{c.container_number}</td>
-                    <td><span className="badge bg-secondary">{c.size_type}</span></td>
-                    <td>{c.shipping_line}</td>
-                    <td>
-                      <div className="text-truncate" style={{ maxWidth: '180px' }}>{c.cargo_description}</div>
-                      <small className="text-muted">Seal: {c.seal_number}</small>
-                    </td>
-                    <td>
-                      <span className="d-block fw-semibold text-primary">{c.terminal_yard}</span>
-                      <small className="text-muted">{c.yard_slot}</small>
-                    </td>
-                    <td className="fw-semibold">{c.bill_of_lading}</td>
-                    <td>{c.consignee}</td>
-                    <td>
-                      <button
-                        className={`btn btn-sm text-white fw-bold border-0 ${c.customs_cleared ? 'bg-success' : 'bg-warning'}`}
-                        onClick={() => handleToggleCustoms(c.id, c.customs_cleared)}
-                        style={{ borderRadius: '6px' }}
-                      >
-                        {c.customs_cleared ? <><i className="fas fa-check-circle me-1"></i>TRA Cleared</> : <><i className="fas fa-clock me-1"></i>Hold / Pending</>}
-                      </button>
+                {filteredContainers.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="text-center text-muted py-4">
+                      No containers found matching selected search or filter criteria.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredContainers.map(c => (
+                    <tr
+                      key={c.id}
+                      className="clickable-row"
+                      onClick={() => setPreviewContainer(c)}
+                      title="Click row to preview full container inventory details"
+                    >
+                      <td className="fw-bold text-dark">
+                        <div className="d-flex align-items-center gap-1.5">
+                          <button
+                            className="btn btn-link p-0 fw-bold text-dark text-start text-decoration-none"
+                            onClick={(e) => { e.stopPropagation(); setPreviewContainer(c); }}
+                          >
+                            {c.container_number}
+                          </button>
+                          <i className="fas fa-external-link-alt text-muted ms-1" style={{ fontSize: '0.68rem', opacity: 0.6 }}></i>
+                        </div>
+                      </td>
+                      <td><span className="badge bg-secondary">{c.size_type}</span></td>
+                      <td>{c.shipping_line}</td>
+                      <td>
+                        <div className="text-truncate" style={{ maxWidth: '180px' }}>{c.cargo_description}</div>
+                        <small className="text-muted">Seal: {c.seal_number}</small>
+                      </td>
+                      <td>
+                        <span className="d-block fw-semibold text-primary">{c.terminal_yard}</span>
+                        <small className="text-muted">{c.yard_slot}</small>
+                      </td>
+                      <td className="fw-semibold">{c.bill_of_lading}</td>
+                      <td>{c.consignee}</td>
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <button
+                          className={`btn btn-sm text-white fw-bold border-0 ${c.customs_cleared ? 'bg-success' : 'bg-warning text-dark'}`}
+                          onClick={() => handleToggleCustoms(c.id, c.customs_cleared)}
+                          style={{ borderRadius: '6px' }}
+                        >
+                          {c.customs_cleared ? <><i className="fas fa-check-circle me-1"></i>TRA Cleared</> : <><i className="fas fa-clock me-1"></i>Hold / Pending</>}
+                        </button>
+                      </td>
+                      <td className="text-end pe-3" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          className="preview-row-btn"
+                          onClick={() => setPreviewContainer(c)}
+                          title="Click to preview container details"
+                        >
+                          <i className="fas fa-eye"></i> View
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -327,6 +368,15 @@ const LogisticsInventory: React.FC = () => {
             </div>
           </div>
         </ModalPortal>
+      )}
+
+      {/* Container Inventory Detail Preview Modal */}
+      {previewContainer && (
+        <ContainerDetailModal
+          container={previewContainer}
+          onClose={() => setPreviewContainer(null)}
+          onToggleCustoms={handleToggleCustoms}
+        />
       )}
     </div>
   );
