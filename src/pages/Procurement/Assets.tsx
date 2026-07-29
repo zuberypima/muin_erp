@@ -3,7 +3,7 @@ import api from '../../api/axiosConfig';
 import { Asset, AssetStatus, AssetCategory } from './procurementTypes';
 import { fmtKES } from './currencyUtils';
 
-const DEPARTMENTS = ['Management','Farm Operations','Finance','Sales & Marketing','IT','Logistics','HR','Procurement'];
+const DEPARTMENTS = ['Management','Farm Operations','Finance','Record Management','IT','Logistics','HR','Procurement'];
 const CATEGORIES: { value: AssetCategory; label: string }[] = [
   { value: 'it_equipment', label: 'IT Equipment' },
   { value: 'furniture', label: 'Furniture' },

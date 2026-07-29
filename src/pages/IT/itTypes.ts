@@ -107,5 +107,5 @@ export const formatDateTime = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
 export const ASSET_CATEGORIES: AssetCategory[] = ['computer', 'laptop', 'printer', 'server', 'network', 'mobile', 'monitor', 'other'];
-export const DEPARTMENTS = ['Management', 'Farm Operations', 'Finance', 'Sales & Marketing', 'IT', 'Logistics', 'HR'];
+export const DEPARTMENTS = ['Management', 'Farm Operations', 'Finance', 'Record Management', 'IT', 'Logistics', 'HR'];
 export const SYSTEMS = ['Finance', 'HR', 'Procurement', 'IT', 'Reports', 'Tasks'];

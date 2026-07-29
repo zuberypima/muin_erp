@@ -3,7 +3,7 @@ import api from '../../api/axiosConfig';
 import { PurchaseRequest, PRItem, PRStatus } from './procurementTypes';
 import { fmtKES } from './currencyUtils';
 
-const DEPARTMENTS = ['Management','Farm Operations','Finance','Sales & Marketing','IT','Logistics','HR','Procurement'];
+const DEPARTMENTS = ['Management','Farm Operations','Finance','Record Management','IT','Logistics','HR','Procurement'];
 const STATUSES: PRStatus[] = ['draft','pending','approved','rejected','ordered'];
 
 const statusBadge: Record<string, string> = {
