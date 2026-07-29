@@ -1,8 +1,11 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { isPageAllowedForUser } from '../../utils/permissionsUtils';
 import './Finance.css';
 
 const FinanceLayout: React.FC = () => {
+  const { user } = useAuth();
   const navItems = [
     { to: '/finance', label: 'Overview', icon: 'fas fa-chart-pie', end: true },
     { to: '/finance/income', label: 'Income', icon: 'fas fa-arrow-circle-down' },
@@ -12,6 +15,8 @@ const FinanceLayout: React.FC = () => {
     { to: '/finance/loans', label: 'Loans', icon: 'fas fa-hand-holding-usd' },
     { to: '/finance/cashflow', label: 'Cashflow', icon: 'fas fa-water' },
   ];
+
+  const visibleNavItems = navItems.filter(item => isPageAllowedForUser(user, item.to));
 
   return (
     <div className="finance-page">
@@ -23,7 +28,7 @@ const FinanceLayout: React.FC = () => {
       </div>
 
       <nav className="finance-subnav mb-4">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

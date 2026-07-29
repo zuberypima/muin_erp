@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { isPageAllowedForUser } from '../../utils/permissionsUtils';
 import '../Procurement/Procurement.css';
 
 const LogisticsLayout: React.FC = () => {
@@ -15,6 +16,7 @@ const LogisticsLayout: React.FC = () => {
     { to: '/logistics/reports', label: 'Shipping TEU Reports', icon: 'fas fa-chart-pie' },
   ];
 
+  const visibleNavItems = navItems.filter(item => isPageAllowedForUser(user, item.to));
   const displayName = user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.username || 'Marine Logistics Manager');
 
   return (
@@ -48,7 +50,7 @@ const LogisticsLayout: React.FC = () => {
 
       {/* Subnav Navigation */}
       <nav className="procurement-subnav mb-4">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

@@ -4,12 +4,14 @@ import AdminDashboard from './components/AdminDashboard';
 import ServicePage from './pages/ServicePage';
 import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import PageAccessGuard from './components/PageAccessGuard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import IdleTimerManager from './components/IdleTimerManager';
 import TaskBoard from './pages/Tasks/TaskBoard';
 import TaskDetailPage from './pages/Tasks/TaskDetailPage';
 import RequestsInbox from './pages/Tasks/RequestsInbox';
 import ERPUsers from './pages/ERPUsers.tsx';
+import UserPermissionsPage from './pages/UserPermissionsPage';
 import FinanceLayout from './pages/Finance/FinanceLayout';
 import FinanceDashboard from './pages/Finance/FinanceDashboard';
 import Income from './pages/Finance/Income';
@@ -99,70 +101,74 @@ const App: React.FC = () => {
               <Route path="tasks/:taskId" element={<TaskDetailPage />} />
               <Route path="tasks/approvals" element={<RequestsInbox mode="approval" />} />
               <Route path="tasks/assist" element={<RequestsInbox mode="assist" />} />
-              <Route path="erp-users" element={<ERPUsers />} />
-              <Route path="self-service" element={<SelfService />} />
-              
-              {/* Finance Module */}
-              <Route path="finance" element={<FinanceLayout />}>
-                <Route index element={<FinanceDashboard />} />
-                <Route path="income" element={<Income />} />
-                <Route path="expenses" element={<Expenses />} />
-                <Route path="transactions" element={<Transactions />} />
-                <Route path="budgets" element={<Budgets />} />
-                <Route path="loans" element={<Loans />} />
-                <Route path="cashflow" element={<CashFlow />} />
-              </Route>
+              {/* Guarded Module Routes */}
+              <Route element={<PageAccessGuard />}>
+                <Route path="erp-users" element={<ERPUsers />} />
+                <Route path="erp-users/permissions" element={<UserPermissionsPage />} />
+                <Route path="self-service" element={<SelfService />} />
+                
+                {/* Finance Module */}
+                <Route path="finance" element={<FinanceLayout />}>
+                  <Route index element={<FinanceDashboard />} />
+                  <Route path="income" element={<Income />} />
+                  <Route path="expenses" element={<Expenses />} />
+                  <Route path="transactions" element={<Transactions />} />
+                  <Route path="budgets" element={<Budgets />} />
+                  <Route path="loans" element={<Loans />} />
+                  <Route path="cashflow" element={<CashFlow />} />
+                </Route>
 
-              {/* HR Module */}
-              <Route path="hr" element={<HRLayout />}>
-                <Route index element={<HRDashboard />} />
-                <Route path="employees" element={<Employees />} />
-                <Route path="tasks" element={<TaskBoard />} />
-                <Route path="tasks/:taskId" element={<TaskDetailPage />} />
-                <Route path="attendance" element={<Attendance />} />
-                <Route path="leaves" element={<Leaves />} />
-                <Route path="performance" element={<Performance />} />
-              </Route>
+                {/* HR Module */}
+                <Route path="hr" element={<HRLayout />}>
+                  <Route index element={<HRDashboard />} />
+                  <Route path="employees" element={<Employees />} />
+                  <Route path="tasks" element={<TaskBoard />} />
+                  <Route path="tasks/:taskId" element={<TaskDetailPage />} />
+                  <Route path="attendance" element={<Attendance />} />
+                  <Route path="leaves" element={<Leaves />} />
+                  <Route path="performance" element={<Performance />} />
+                </Route>
 
-              {/* Procurement & Purchasing Module */}
-              <Route path="procurement" element={<ProcurementLayout />}>
-                <Route index element={<ProcurementDashboard />} />
-                <Route path="purchase-requests" element={<PurchaseRequests />} />
-                <Route path="purchase-orders" element={<PurchaseOrders />} />
-                <Route path="goods-receiving" element={<GoodsReceiving />} />
-                <Route path="inventory" element={<Inventory />} />
-                <Route path="stock-tracking" element={<StockTracking />} />
-                <Route path="assets" element={<Assets />} />
-                <Route path="reports" element={<InventoryReports />} />
-              </Route>
+                {/* Procurement & Purchasing Module */}
+                <Route path="procurement" element={<ProcurementLayout />}>
+                  <Route index element={<ProcurementDashboard />} />
+                  <Route path="purchase-requests" element={<PurchaseRequests />} />
+                  <Route path="purchase-orders" element={<PurchaseOrders />} />
+                  <Route path="goods-receiving" element={<GoodsReceiving />} />
+                  <Route path="inventory" element={<Inventory />} />
+                  <Route path="stock-tracking" element={<StockTracking />} />
+                  <Route path="assets" element={<Assets />} />
+                  <Route path="reports" element={<InventoryReports />} />
+                </Route>
 
-              {/* Logistics & Supply Module */}
-              <Route path="logistics" element={<LogisticsLayout />}>
-                <Route index element={<LogisticsDashboard />} />
-                <Route path="inventory" element={<LogisticsInventory />} />
-                <Route path="stock-tracking" element={<LogisticsMovements />} />
-                <Route path="dispatches" element={<LogisticsDispatches />} />
-                <Route path="reports" element={<LogisticsReports />} />
-              </Route>
+                {/* Logistics & Supply Module */}
+                <Route path="logistics" element={<LogisticsLayout />}>
+                  <Route index element={<LogisticsDashboard />} />
+                  <Route path="inventory" element={<LogisticsInventory />} />
+                  <Route path="stock-tracking" element={<LogisticsMovements />} />
+                  <Route path="dispatches" element={<LogisticsDispatches />} />
+                  <Route path="reports" element={<LogisticsReports />} />
+                </Route>
 
-              {/* Records & Asset Management Module */}
-              <Route path="assets" element={<AssetsLayout />}>
-                <Route index element={<AssetsDashboard />} />
-                <Route path="register" element={<AssetRegister />} />
-                <Route path="maintenance" element={<AssetMaintenance />} />
-                <Route path="transfers" element={<AssetTransfers />} />
-                <Route path="records" element={<AssetRecords />} />
-                <Route path="reports" element={<AssetReports />} />
-              </Route>
+                {/* Records & Asset Management Module */}
+                <Route path="assets" element={<AssetsLayout />}>
+                  <Route index element={<AssetsDashboard />} />
+                  <Route path="register" element={<AssetRegister />} />
+                  <Route path="maintenance" element={<AssetMaintenance />} />
+                  <Route path="transfers" element={<AssetTransfers />} />
+                  <Route path="records" element={<AssetRecords />} />
+                  <Route path="reports" element={<AssetReports />} />
+                </Route>
 
-              {/* IT Module */}
-              <Route path="it" element={<ITLayout />}>
-                <Route index element={<ITDashboard />} />
-                <Route path="assets" element={<ITAssets />} />
-                <Route path="user-accounts" element={<UserAccounts />} />
-                <Route path="support-tickets" element={<SupportTickets />} />
-                <Route path="maintenance" element={<MaintenanceRecords />} />
-                <Route path="software-licenses" element={<SoftwareLicenses />} />
+                {/* IT Module */}
+                <Route path="it" element={<ITLayout />}>
+                  <Route index element={<ITDashboard />} />
+                  <Route path="assets" element={<ITAssets />} />
+                  <Route path="user-accounts" element={<UserAccounts />} />
+                  <Route path="support-tickets" element={<SupportTickets />} />
+                  <Route path="maintenance" element={<MaintenanceRecords />} />
+                  <Route path="software-licenses" element={<SoftwareLicenses />} />
+                </Route>
               </Route>
             </Route>
           </Route>

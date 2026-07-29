@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { isPageAllowedForUser } from '../../utils/permissionsUtils';
 import './HR.css';
 
 const HRLayout: React.FC = () => {
@@ -16,6 +17,7 @@ const HRLayout: React.FC = () => {
     { to: '/hr/performance',label: 'Performance', icon: 'fas fa-star' },
   ];
 
+  const visibleTabs = tabs.filter(t => isPageAllowedForUser(user, t.to));
   const displayName = user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.username || 'HR Staff');
 
   return (
@@ -43,7 +45,7 @@ const HRLayout: React.FC = () => {
       </div>
 
       <nav className="hr-subnav mb-4">
-        {tabs.map(t => (
+        {visibleTabs.map(t => (
           <NavLink key={t.to} to={t.to} end={t.end}
             className={({ isActive }) => `hr-subnav-link ${isActive ? 'active' : ''}`}>
             <i className={t.icon}></i>{t.label}

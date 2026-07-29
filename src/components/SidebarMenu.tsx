@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { resolveDepartmentRoute, isDepartmentMatch } from '../utils/departmentUtils';
+import { resolveDepartmentRoute } from '../utils/departmentUtils';
+import { isPageAllowedForUser, isSuperAdminUser } from '../utils/permissionsUtils';
 import muinLogo from '../assets/muin-logo.png';
 import './SidebarMenu.css';
 
@@ -14,6 +15,17 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [permVersion, setPermVersion] = useState(0);
+
+  useEffect(() => {
+    const handlePermissionsUpdated = () => setPermVersion(v => v + 1);
+    window.addEventListener('muin_permissions_updated', handlePermissionsUpdated);
+    return () => window.removeEventListener('muin_permissions_updated', handlePermissionsUpdated);
+  }, []);
+
+  // Force re-evaluation of permissions when permVersion updates
+  useEffect(() => {}, [permVersion]);
 
   const isTasksRoute = location.pathname.startsWith('/tasks');
   const isTasksSubRoute = location.pathname.startsWith('/tasks/') && location.pathname !== '/tasks';
@@ -65,16 +77,18 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
     }
   };
 
-  const isSuperAdmin = user?.is_staff || isDepartmentMatch(user?.department, 'management');
+  const isSuperAdmin = isSuperAdminUser(user);
   const dept = user?.department;
 
-  const showHR = isSuperAdmin || isDepartmentMatch(dept, 'hr');
-  const showFinance = isSuperAdmin || isDepartmentMatch(dept, 'finance');
-  const showIT = isSuperAdmin || isDepartmentMatch(dept, 'it');
-  const showProcurement = isSuperAdmin || isDepartmentMatch(dept, 'procurement');
-  const showLogistics = isSuperAdmin || isDepartmentMatch(dept, 'logistics');
-  const showAssets = isSuperAdmin || isDepartmentMatch(dept, 'assets');
-  const showUsers = isSuperAdmin;
+  const showHR = isPageAllowedForUser(user, '/hr');
+  const showFinance = isPageAllowedForUser(user, '/finance');
+  const showIT = isPageAllowedForUser(user, '/it');
+  const showProcurement = isPageAllowedForUser(user, '/procurement');
+  const showLogistics = isPageAllowedForUser(user, '/logistics');
+  const showAssets = isPageAllowedForUser(user, '/assets');
+  const showUsers = isSuperAdmin || isPageAllowedForUser(user, '/erp-users');
+  const showSelfService = isPageAllowedForUser(user, '/self-service');
+  const showTasks = isPageAllowedForUser(user, '/tasks');
 
   const getDashboardRoute = () => resolveDepartmentRoute(user);
 
@@ -119,52 +133,63 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
 
 
 
-        <li className="nav-item">
-          <div
-            className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isTasksSubRoute ? 'active' : ''}`}
-            style={{ cursor: 'pointer' }}
-            onClick={() => setTasksDropdownOpen(!tasksDropdownOpen)}
-          >
-            <div className="d-flex align-items-center">
-              <i className="fas fa-tasks nav-icon"></i>
-              <span>Office Tasks</span>
-            </div>
-            <i className={`fas fa-chevron-${tasksDropdownOpen ? 'down' : 'right'} ms-auto dropdown-chevron`} style={{ fontSize: '0.8rem' }}></i>
-          </div>
-
-          {tasksDropdownOpen && (
-            <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
-              <li className="nav-item">
-                <NavLink to="/tasks" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                  <i className="fas fa-clipboard-list nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Board</span>
-                </NavLink>
-              </li>
-              <li className="nav-item">
-                <NavLink to="/tasks/approvals" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                  <i className="fas fa-check-circle nav-icon" style={{ color: '#7c3aed', fontSize: '0.9rem' }}></i> <span>Approvals</span>
-                </NavLink>
-              </li>
-              <li className="nav-item">
-                <NavLink to="/tasks/assist" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
-                  <i className="fas fa-life-ring nav-icon" style={{ color: '#ea580c', fontSize: '0.9rem' }}></i> <span>Assistance</span>
-                </NavLink>
-              </li>
-            </ul>
-          )}
-        </li>
-
-        <li className="nav-item">
-          <NavLink to="/self-service" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
-            <i className="fas fa-user-circle nav-icon"></i> <span>Self Service Hub</span>
-          </NavLink>
-        </li>
-
-        {showUsers && (
+        {showTasks && (
           <li className="nav-item">
-            <NavLink to="/erp-users" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
-              <i className="fas fa-user-tie nav-icon"></i> <span>ERP Users</span>
+            <div
+              className={`nav-link custom-nav-link d-flex align-items-center justify-content-between ${isTasksSubRoute ? 'active' : ''}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setTasksDropdownOpen(!tasksDropdownOpen)}
+            >
+              <div className="d-flex align-items-center">
+                <i className="fas fa-tasks nav-icon"></i>
+                <span>Office Tasks</span>
+              </div>
+              <i className={`fas fa-chevron-${tasksDropdownOpen ? 'down' : 'right'} ms-auto dropdown-chevron`} style={{ fontSize: '0.8rem' }}></i>
+            </div>
+
+            {tasksDropdownOpen && (
+              <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
+                <li className="nav-item">
+                  <NavLink to="/tasks" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-clipboard-list nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Board</span>
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/tasks/approvals" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-check-circle nav-icon" style={{ color: '#7c3aed', fontSize: '0.9rem' }}></i> <span>Approvals</span>
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/tasks/assist" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
+                    <i className="fas fa-life-ring nav-icon" style={{ color: '#ea580c', fontSize: '0.9rem' }}></i> <span>Assistance</span>
+                  </NavLink>
+                </li>
+              </ul>
+            )}
+          </li>
+        )}
+
+        {showSelfService && (
+          <li className="nav-item">
+            <NavLink to="/self-service" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
+              <i className="fas fa-user-circle nav-icon"></i> <span>Self Service Hub</span>
             </NavLink>
           </li>
+        )}
+
+        {showUsers && (
+          <>
+            <li className="nav-item">
+              <NavLink to="/erp-users" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
+                <i className="fas fa-user-tie nav-icon"></i> <span>ERP Users</span>
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink to="/erp-users/permissions" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`}>
+                <i className="fas fa-user-shield nav-icon" style={{ color: '#10b981' }}></i> <span>Page Permissions</span>
+              </NavLink>
+            </li>
+          </>
         )}
 
         {showFinance && (
