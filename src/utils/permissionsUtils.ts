@@ -168,6 +168,8 @@ export const getPermissionsForUser = (user: any): string[] => {
 export const isPageAllowedForUser = (user: any, routePath: string): boolean => {
   if (!user) return false;
 
+  if (isSuperAdminUser(user)) return true;
+
   const allowedRoutes = getPermissionsForUser(user);
   
   // Exact match or sub-route match
@@ -177,3 +179,24 @@ export const isPageAllowedForUser = (user: any, routePath: string): boolean => {
     return false;
   });
 };
+
+export const isModuleAllowedForUser = (user: any, moduleKey: string): boolean => {
+  if (!user) return false;
+  if (isSuperAdminUser(user)) return true;
+
+  return ALL_SYSTEM_PAGES
+    .filter(p => p.module === moduleKey)
+    .some(p => isPageAllowedForUser(user, p.route));
+};
+
+export const getFirstAllowedRouteForModule = (user: any, moduleKey: string): string | null => {
+  if (!user) return null;
+  const pages = ALL_SYSTEM_PAGES.filter(p => p.module === moduleKey);
+  for (const page of pages) {
+    if (isPageAllowedForUser(user, page.route)) {
+      return page.route;
+    }
+  }
+  return null;
+};
+

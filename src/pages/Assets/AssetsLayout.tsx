@@ -1,14 +1,15 @@
 import React from 'react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { isDepartmentMatch, resolveDepartmentRoute } from '../../utils/departmentUtils';
+import { isPageAllowedForUser, isModuleAllowedForUser } from '../../utils/permissionsUtils';
+import { resolveDepartmentRoute } from '../../utils/departmentUtils';
 import '../Procurement/Procurement.css';
 
 const AssetsLayout: React.FC = () => {
   const { user } = useAuth();
   const todayFormatted = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  const isAuthorized = user?.is_staff || isDepartmentMatch(user?.department, 'assets') || isDepartmentMatch(user?.department, 'management');
+  const isAuthorized = isModuleAllowedForUser(user, 'assets');
 
   if (user && !isAuthorized) {
     const fallbackRoute = resolveDepartmentRoute(user);
@@ -23,6 +24,8 @@ const AssetsLayout: React.FC = () => {
     { to: '/assets/records', label: 'Document Records', icon: 'fas fa-folder-open' },
     { to: '/assets/reports', label: 'Valuation & Audits', icon: 'fas fa-chart-pie' },
   ];
+
+  const visibleNavItems = navItems.filter(item => isPageAllowedForUser(user, item.to));
 
   const displayName = user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.username || 'Asset Manager');
 
@@ -57,7 +60,7 @@ const AssetsLayout: React.FC = () => {
 
       {/* Subnav Navigation */}
       <nav className="procurement-subnav mb-4">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

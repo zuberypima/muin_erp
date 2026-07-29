@@ -1,8 +1,11 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { isPageAllowedForUser } from '../../utils/permissionsUtils';
 import './IT.css';
 
 const ITLayout: React.FC = () => {
+  const { user } = useAuth();
   const tabs = [
     { to: '/it',                    label: 'Overview',          icon: 'fas fa-th-large',      end: true },
     { to: '/it/assets',             label: 'IT Assets',         icon: 'fas fa-laptop'                   },
@@ -11,6 +14,8 @@ const ITLayout: React.FC = () => {
     { to: '/it/maintenance',        label: 'Maintenance',       icon: 'fas fa-tools'                    },
     { to: '/it/software-licenses',  label: 'Licenses',          icon: 'fas fa-key'                      },
   ];
+
+  const visibleTabs = tabs.filter(t => isPageAllowedForUser(user, t.to));
 
   return (
     <div className="it-page">
@@ -22,7 +27,7 @@ const ITLayout: React.FC = () => {
       </div>
 
       <nav className="it-subnav mb-4">
-        {tabs.map(t => (
+        {visibleTabs.map(t => (
           <NavLink
             key={t.to}
             to={t.to}

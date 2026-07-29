@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { resolveDepartmentRoute } from '../utils/departmentUtils';
-import { isPageAllowedForUser, isSuperAdminUser } from '../utils/permissionsUtils';
+import { isPageAllowedForUser, isSuperAdminUser, isModuleAllowedForUser } from '../utils/permissionsUtils';
 import muinLogo from '../assets/muin-logo.png';
 import './SidebarMenu.css';
 
@@ -80,15 +80,15 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
   const isSuperAdmin = isSuperAdminUser(user);
   const dept = user?.department;
 
-  const showHR = isPageAllowedForUser(user, '/hr');
-  const showFinance = isPageAllowedForUser(user, '/finance');
-  const showIT = isPageAllowedForUser(user, '/it');
-  const showProcurement = isPageAllowedForUser(user, '/procurement');
-  const showLogistics = isPageAllowedForUser(user, '/logistics');
-  const showAssets = isPageAllowedForUser(user, '/assets');
+  const showHR = isModuleAllowedForUser(user, 'hr');
+  const showFinance = isModuleAllowedForUser(user, 'finance');
+  const showIT = isModuleAllowedForUser(user, 'it');
+  const showProcurement = isModuleAllowedForUser(user, 'procurement');
+  const showLogistics = isModuleAllowedForUser(user, 'logistics');
+  const showAssets = isModuleAllowedForUser(user, 'assets');
   const showUsers = isSuperAdmin || isPageAllowedForUser(user, '/erp-users');
   const showSelfService = isPageAllowedForUser(user, '/self-service');
-  const showTasks = isPageAllowedForUser(user, '/tasks');
+  const showTasks = isModuleAllowedForUser(user, 'tasks');
 
   const getDashboardRoute = () => resolveDepartmentRoute(user);
 
@@ -149,26 +149,34 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
 
             {tasksDropdownOpen && (
               <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
-                <li className="nav-item">
-                  <NavLink to="/tasks" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-clipboard-list nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Board</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/tasks/approvals" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-check-circle nav-icon" style={{ color: '#7c3aed', fontSize: '0.9rem' }}></i> <span>Approvals</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/tasks/assist" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
-                    <i className="fas fa-life-ring nav-icon" style={{ color: '#ea580c', fontSize: '0.9rem' }}></i> <span>Assistance</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/tasks/archive" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-archive nav-icon" style={{ color: '#64748b', fontSize: '0.9rem' }}></i> <span>Archived Vault</span>
-                  </NavLink>
-                </li>
+                {isPageAllowedForUser(user, '/tasks') && (
+                  <li className="nav-item">
+                    <NavLink to="/tasks" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-clipboard-list nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Board</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/tasks/approvals') && (
+                  <li className="nav-item">
+                    <NavLink to="/tasks/approvals" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-check-circle nav-icon" style={{ color: '#7c3aed', fontSize: '0.9rem' }}></i> <span>Approvals</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/tasks/assist') && (
+                  <li className="nav-item">
+                    <NavLink to="/tasks/assist" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
+                      <i className="fas fa-life-ring nav-icon" style={{ color: '#ea580c', fontSize: '0.9rem' }}></i> <span>Assistance</span>
+                    </NavLink>
+                  </li>
+                )}
+                {(isPageAllowedForUser(user, '/tasks') || isPageAllowedForUser(user, '/tasks/approvals')) && (
+                  <li className="nav-item">
+                    <NavLink to="/tasks/archive" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-archive nav-icon" style={{ color: '#64748b', fontSize: '0.9rem' }}></i> <span>Archived Vault</span>
+                    </NavLink>
+                  </li>
+                )}
               </ul>
             )}
           </li>
@@ -212,36 +220,55 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
             </div>
             {financeDropdownOpen && (
               <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
-                <li className="nav-item">
-                  <NavLink to="/finance/income" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-arrow-circle-down nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Income</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/finance/expenses" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-arrow-circle-up nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Expenses</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/finance/transactions" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-exchange-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Transactions</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/finance/budgets" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-wallet nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Budgets</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/finance/loans" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-hand-holding-usd nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Loans</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/finance/cashflow" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-water nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Cashflow</span>
-                  </NavLink>
-                </li>
+                {isPageAllowedForUser(user, '/finance') && (
+                  <li className="nav-item">
+                    <NavLink to="/finance" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-chart-line nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Overview</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/finance/income') && (
+                  <li className="nav-item">
+                    <NavLink to="/finance/income" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-arrow-circle-down nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Income</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/finance/expenses') && (
+                  <li className="nav-item">
+                    <NavLink to="/finance/expenses" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-arrow-circle-up nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Expenses</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/finance/transactions') && (
+                  <li className="nav-item">
+                    <NavLink to="/finance/transactions" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-exchange-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Transactions</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/finance/budgets') && (
+                  <li className="nav-item">
+                    <NavLink to="/finance/budgets" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-wallet nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Budgets</span>
+                    </NavLink>
+                  </li>
+                )}
+                {(isPageAllowedForUser(user, '/finance/budgets') || isPageAllowedForUser(user, '/finance')) && (
+                  <li className="nav-item">
+                    <NavLink to="/finance/loans" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-hand-holding-usd nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Loans</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/finance/cashflow') && (
+                  <li className="nav-item">
+                    <NavLink to="/finance/cashflow" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-water nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Cashflow</span>
+                    </NavLink>
+                  </li>
+                )}
               </ul>
             )}
           </li>
@@ -262,26 +289,41 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
             </div>
             {hrDropdownOpen && (
               <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
-                <li className="nav-item">
-                  <NavLink to="/hr/employees" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-users nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Employees</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/hr/attendance" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-calendar-check nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Attendance</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/hr/leaves" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-umbrella-beach nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Leaves</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/hr/performance" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-star nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Performance</span>
-                  </NavLink>
-                </li>
+                {isPageAllowedForUser(user, '/hr') && (
+                  <li className="nav-item">
+                    <NavLink to="/hr" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-th-large nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Overview</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/hr/employees') && (
+                  <li className="nav-item">
+                    <NavLink to="/hr/employees" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-users nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Employees</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/hr/attendance') && (
+                  <li className="nav-item">
+                    <NavLink to="/hr/attendance" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-calendar-check nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Attendance</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/hr/leaves') && (
+                  <li className="nav-item">
+                    <NavLink to="/hr/leaves" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-umbrella-beach nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Leaves</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/hr/performance') && (
+                  <li className="nav-item">
+                    <NavLink to="/hr/performance" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-star nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Performance</span>
+                    </NavLink>
+                  </li>
+                )}
               </ul>
             )}
           </li>
@@ -302,26 +344,55 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
             </div>
             {procurementDropdownOpen && (
               <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
-                <li className="nav-item">
-                  <NavLink to="/procurement/purchase-requests" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-file-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Purchase Requests</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/procurement/purchase-orders" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-shopping-cart nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Purchase Orders</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/procurement/goods-receiving" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-truck-loading nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Goods Receiving</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/procurement/reports" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-chart-pie nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Reports</span>
-                  </NavLink>
-                </li>
+                {isPageAllowedForUser(user, '/procurement') && (
+                  <li className="nav-item">
+                    <NavLink to="/procurement" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-chart-bar nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Overview</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/procurement/purchase-requests') && (
+                  <li className="nav-item">
+                    <NavLink to="/procurement/purchase-requests" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-file-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Purchase Requests</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/procurement/purchase-orders') && (
+                  <li className="nav-item">
+                    <NavLink to="/procurement/purchase-orders" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-shopping-cart nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Purchase Orders</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/procurement/goods-receiving') && (
+                  <li className="nav-item">
+                    <NavLink to="/procurement/goods-receiving" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-truck-loading nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Goods Receiving</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/procurement/inventory') && (
+                  <li className="nav-item">
+                    <NavLink to="/procurement/inventory" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-boxes nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Warehouse Inventory</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/procurement/stock-tracking') && (
+                  <li className="nav-item">
+                    <NavLink to="/procurement/stock-tracking" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-exchange-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Stock Tracking</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/procurement/reports') && (
+                  <li className="nav-item">
+                    <NavLink to="/procurement/reports" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-chart-pie nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Reports</span>
+                    </NavLink>
+                  </li>
+                )}
               </ul>
             )}
           </li>
@@ -342,26 +413,41 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
             </div>
             {logisticsDropdownOpen && (
               <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
-                <li className="nav-item">
-                  <NavLink to="/logistics/inventory" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-boxes nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Inventory &amp; Stock</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/logistics/stock-tracking" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-exchange-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Stock Movements</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/logistics/dispatches" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-shipping-fast nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Dispatches &amp; Shipments</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/logistics/reports" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-chart-pie nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Analytics &amp; Reports</span>
-                  </NavLink>
-                </li>
+                {isPageAllowedForUser(user, '/logistics') && (
+                  <li className="nav-item">
+                    <NavLink to="/logistics" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-anchor nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Port Overview</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/logistics/inventory') && (
+                  <li className="nav-item">
+                    <NavLink to="/logistics/inventory" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-boxes nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Inventory &amp; Stock</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/logistics/stock-tracking') && (
+                  <li className="nav-item">
+                    <NavLink to="/logistics/stock-tracking" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-exchange-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Stock Movements</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/logistics/dispatches') && (
+                  <li className="nav-item">
+                    <NavLink to="/logistics/dispatches" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-shipping-fast nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Dispatches &amp; Shipments</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/logistics/reports') && (
+                  <li className="nav-item">
+                    <NavLink to="/logistics/reports" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-chart-pie nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Analytics &amp; Reports</span>
+                    </NavLink>
+                  </li>
+                )}
               </ul>
             )}
           </li>
@@ -382,31 +468,48 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
             </div>
             {assetsDropdownOpen && (
               <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
-                <li className="nav-item">
-                  <NavLink to="/assets/register" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-boxes nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Asset Register</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/assets/maintenance" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-tools nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Maintenance</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/assets/transfers" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-exchange-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Custody Transfers</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/assets/records" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-folder-open nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Document Records</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/assets/reports" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-chart-pie nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Valuation &amp; Audits</span>
-                  </NavLink>
-                </li>
+                {isPageAllowedForUser(user, '/assets') && (
+                  <li className="nav-item">
+                    <NavLink to="/assets" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-chart-bar nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Overview</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/assets/register') && (
+                  <li className="nav-item">
+                    <NavLink to="/assets/register" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-boxes nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Asset Register</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/assets/maintenance') && (
+                  <li className="nav-item">
+                    <NavLink to="/assets/maintenance" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-tools nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Maintenance</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/assets/transfers') && (
+                  <li className="nav-item">
+                    <NavLink to="/assets/transfers" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-exchange-alt nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Custody Transfers</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/assets/records') && (
+                  <li className="nav-item">
+                    <NavLink to="/assets/records" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-folder-open nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Document Records</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/assets/reports') && (
+                  <li className="nav-item">
+                    <NavLink to="/assets/reports" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-chart-pie nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Valuation &amp; Audits</span>
+                    </NavLink>
+                  </li>
+                )}
               </ul>
             )}
           </li>
@@ -427,31 +530,48 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
             </div>
             {itDropdownOpen && (
               <ul className="nav flex-column ps-3 mt-1 gap-1" style={{ listStyle: 'none' }}>
-                <li className="nav-item">
-                  <NavLink to="/it/assets" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-laptop nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>IT Assets</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/it/user-accounts" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-user-shield nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>User Accounts</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/it/support-tickets" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-headset nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Help Desk</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/it/maintenance" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-tools nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Maintenance</span>
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/it/software-licenses" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                    <i className="fas fa-key nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Licenses</span>
-                  </NavLink>
-                </li>
+                {isPageAllowedForUser(user, '/it') && (
+                  <li className="nav-item">
+                    <NavLink to="/it" end className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-th-large nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Overview</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/it/assets') && (
+                  <li className="nav-item">
+                    <NavLink to="/it/assets" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-laptop nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>IT Assets</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/it/user-accounts') && (
+                  <li className="nav-item">
+                    <NavLink to="/it/user-accounts" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-user-shield nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>User Accounts</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/it/support-tickets') && (
+                  <li className="nav-item">
+                    <NavLink to="/it/support-tickets" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-headset nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Help Desk</span>
+                    </NavLink>
+                  </li>
+                )}
+                {(isPageAllowedForUser(user, '/it/maintenance') || isPageAllowedForUser(user, '/it')) && (
+                  <li className="nav-item">
+                    <NavLink to="/it/maintenance" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-tools nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Maintenance</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/it/software-licenses') && (
+                  <li className="nav-item">
+                    <NavLink to="/it/software-licenses" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-key nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Licenses</span>
+                    </NavLink>
+                  </li>
+                )}
               </ul>
             )}
           </li>

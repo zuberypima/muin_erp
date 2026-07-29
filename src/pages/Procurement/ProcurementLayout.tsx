@@ -1,8 +1,11 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { isPageAllowedForUser } from '../../utils/permissionsUtils';
 import './Procurement.css';
 
 const ProcurementLayout: React.FC = () => {
+  const { user } = useAuth();
   const navItems = [
     { to: '/procurement', label: 'Overview',          icon: 'fas fa-chart-bar',       end: true },
     { to: '/procurement/purchase-requests', label: 'Purchase Requests', icon: 'fas fa-file-alt' },
@@ -10,9 +13,10 @@ const ProcurementLayout: React.FC = () => {
     { to: '/procurement/goods-receiving',   label: 'Goods Receiving',   icon: 'fas fa-truck-loading' },
     { to: '/procurement/inventory',         label: 'Inventory',         icon: 'fas fa-boxes' },
     { to: '/procurement/stock-tracking',    label: 'Stock Tracking',    icon: 'fas fa-exchange-alt' },
-    { to: '/procurement/assets',            label: 'Assets',            icon: 'fas fa-laptop' },
     { to: '/procurement/reports',           label: 'Reports',           icon: 'fas fa-chart-pie' },
   ];
+
+  const visibleNavItems = navItems.filter(item => isPageAllowedForUser(user, item.to));
 
   return (
     <div className="procurement-page">
@@ -24,7 +28,7 @@ const ProcurementLayout: React.FC = () => {
       </div>
 
       <nav className="procurement-subnav mb-4">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
