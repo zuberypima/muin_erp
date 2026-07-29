@@ -164,6 +164,11 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
                     <i className="fas fa-life-ring nav-icon" style={{ color: '#ea580c', fontSize: '0.9rem' }}></i> <span>Assistance</span>
                   </NavLink>
                 </li>
+                <li className="nav-item">
+                  <NavLink to="/tasks/archive" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                    <i className="fas fa-archive nav-icon" style={{ color: '#64748b', fontSize: '0.9rem' }}></i> <span>Archived Vault</span>
+                  </NavLink>
+                </li>
               </ul>
             )}
           </li>

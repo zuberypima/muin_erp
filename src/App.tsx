@@ -10,6 +10,7 @@ import IdleTimerManager from './components/IdleTimerManager';
 import TaskBoard from './pages/Tasks/TaskBoard';
 import TaskDetailPage from './pages/Tasks/TaskDetailPage';
 import RequestsInbox from './pages/Tasks/RequestsInbox';
+import ArchivedTasksPage from './pages/Tasks/ArchivedTasksPage';
 import ERPUsers from './pages/ERPUsers.tsx';
 import UserPermissionsPage from './pages/UserPermissionsPage';
 import FinanceLayout from './pages/Finance/FinanceLayout';
@@ -101,6 +102,7 @@ const App: React.FC = () => {
               <Route path="tasks/:taskId" element={<TaskDetailPage />} />
               <Route path="tasks/approvals" element={<RequestsInbox mode="approval" />} />
               <Route path="tasks/assist" element={<RequestsInbox mode="assist" />} />
+              <Route path="tasks/archive" element={<ArchivedTasksPage />} />
               {/* Guarded Module Routes */}
               <Route element={<PageAccessGuard />}>
                 <Route path="erp-users" element={<ERPUsers />} />

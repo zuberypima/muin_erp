@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axiosConfig';
 import CreateTaskModal from './CreateTaskModal.tsx';
 import TaskDetailModal from './TaskDetailModal.tsx';
+import { isTaskArchived } from './ArchivedTasksPage.tsx';
 import './Tasks.css';
 
 interface UserDetail { id: number; uuid: string; username: string; email: string; }
@@ -26,6 +28,7 @@ interface Task {
 const ALL_STATUSES = ['Pending', 'In-Progress', 'Awaiting-Approval', 'Assist-Requested', 'Completed'];
 
 const TaskBoard: React.FC = () => {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'my' | 'assigned' | 'collaborating'>('all');
@@ -93,16 +96,20 @@ const TaskBoard: React.FC = () => {
   const isOverdue = (t: Task) => t.status !== 'Completed' && t.due_date && new Date(t.due_date) < new Date();
   const getInitials = (name?: string) => name ? name.slice(0, 2).toUpperCase() : 'U';
 
+  // Separate active vs archived tasks
+  const activeTasks = tasks.filter(t => !isTaskArchived(t));
+  const archivedCount = tasks.filter(isTaskArchived).length;
+
   const stats = {
-    total: tasks.length,
-    completed: tasks.filter(t => t.status === 'Completed').length,
-    active: tasks.filter(t => ['In-Progress', 'Pending'].includes(t.status)).length,
-    overdue: tasks.filter(isOverdue).length,
-    awaiting: tasks.filter(t => ['Awaiting-Approval', 'Assist-Requested'].includes(t.status)).length,
+    total: activeTasks.length,
+    completed: activeTasks.filter(t => t.status === 'Completed').length,
+    active: activeTasks.filter(t => ['In-Progress', 'Pending'].includes(t.status)).length,
+    overdue: activeTasks.filter(isOverdue).length,
+    awaiting: activeTasks.filter(t => ['Awaiting-Approval', 'Assist-Requested'].includes(t.status)).length,
   };
   const pct = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
-  const filtered = tasks
+  const filtered = activeTasks
     .filter(t =>
       (t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
        (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -122,7 +129,7 @@ const TaskBoard: React.FC = () => {
     });
 
   const tabs: { key: typeof activeTab; label: string }[] = [
-    { key: 'all', label: 'All Tasks' },
+    { key: 'all', label: 'Active Tasks' },
     { key: 'my', label: 'My Tasks' },
     { key: 'assigned', label: 'Assigned By Me' },
     { key: 'collaborating', label: '👥 Collaborating' },
@@ -131,16 +138,30 @@ const TaskBoard: React.FC = () => {
   return (
     <div className="container-fluid py-2 fade-in">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
         <div>
           <h4 className="fw-bold text-dark mb-1">Office Tasks</h4>
           <p className="text-muted mb-0 small" style={{ fontSize: '0.82rem' }}>
-            Collaborative task management with handoffs, approvals and assistance requests.
+            Active task management. Past completed tasks are automatically stored in the Archive Vault.
           </p>
         </div>
-        <button className="btn text-white fw-bold px-3 py-1.5 shadow-sm" style={{ backgroundColor: '#10b981', borderRadius: '6px', fontSize: '0.82rem' }} onClick={() => setShowModal(true)}>
-          <i className="fas fa-plus me-1.5"></i> New Task
-        </button>
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-outline-secondary fw-semibold px-3 py-1.5 shadow-sm position-relative"
+            onClick={() => navigate('/tasks/archive')}
+            style={{ borderRadius: '6px', fontSize: '0.82rem' }}
+          >
+            <i className="fas fa-archive me-1.5 text-secondary"></i> Archived Tasks Vault
+            {archivedCount > 0 && (
+              <span className="badge bg-secondary ms-1.5 rounded-pill" style={{ fontSize: '0.7rem' }}>
+                {archivedCount}
+              </span>
+            )}
+          </button>
+          <button className="btn text-white fw-bold px-3 py-1.5 shadow-sm" style={{ backgroundColor: '#10b981', borderRadius: '6px', fontSize: '0.82rem' }} onClick={() => setShowModal(true)}>
+            <i className="fas fa-plus me-1.5"></i> New Task
+          </button>
+        </div>
       </div>
 
       {/* KPI Row */}
