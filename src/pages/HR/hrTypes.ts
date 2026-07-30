@@ -52,13 +52,13 @@ export interface PerformanceReview {
   reviewDate: string;
 }
 
-export const DEPARTMENTS = ['Management', 'Farm Operations', 'Finance', 'Record Management', 'IT', 'Logistics', 'HR'];
+export const DEPARTMENTS = ['Management', 'Farm Operations', 'Finance', 'Sales & Marketing', 'IT', 'Logistics', 'HR'];
 
 export const demoEmployees: Employee[] = [
   { id: 'EMP-001', firstName: 'Amina', lastName: 'Hassan', email: 'amina.h@muini.co.tz', phone: '+255712345678', department: 'Management', position: 'General Manager', employmentType: 'full-time', startDate: '2022-01-15', status: 'active' },
   { id: 'EMP-002', firstName: 'James', lastName: 'Okonkwo', email: 'james.o@muini.co.tz', phone: '+255723456789', department: 'Farm Operations', position: 'Head of Agriculture', employmentType: 'full-time', startDate: '2022-03-01', status: 'active' },
   { id: 'EMP-003', firstName: 'Fatuma', lastName: 'Ally', email: 'fatuma.a@muini.co.tz', phone: '+255734567890', department: 'Finance', position: 'Finance Officer', employmentType: 'full-time', startDate: '2023-06-01', status: 'active' },
-  { id: 'EMP-004', firstName: 'Peter', lastName: 'Kamau', email: 'peter.k@muini.co.tz', phone: '+255745678901', department: 'Record Management', position: 'Sales Manager', employmentType: 'full-time', startDate: '2023-09-15', status: 'on-leave' },
+  { id: 'EMP-004', firstName: 'Peter', lastName: 'Kamau', email: 'peter.k@muini.co.tz', phone: '+255745678901', department: 'Sales & Marketing', position: 'Sales Manager', employmentType: 'full-time', startDate: '2023-09-15', status: 'on-leave' },
   { id: 'EMP-005', firstName: 'Grace', lastName: 'Mwangi', email: 'grace.m@muini.co.tz', phone: '+255756789012', department: 'IT', position: 'IT Administrator', employmentType: 'full-time', startDate: '2024-01-10', status: 'active' },
   { id: 'EMP-006', firstName: 'Ibrahim', lastName: 'Salim', email: 'ibrahim.s@muini.co.tz', phone: '+255767890123', department: 'Logistics', position: 'Logistics Coordinator', employmentType: 'full-time', startDate: '2024-04-01', status: 'active' },
   { id: 'EMP-007', firstName: 'Zawadi', lastName: 'Juma', email: 'zawadi.j@muini.co.tz', phone: '+255778901234', department: 'Farm Operations', position: 'Field Supervisor', employmentType: 'contract', startDate: '2025-01-01', status: 'active' },
@@ -75,7 +75,7 @@ export const demoAttendance: AttendanceRecord[] = [
 ];
 
 export const demoLeaves: LeaveRequest[] = [
-  { id: 'LV-001', employeeId: 'EMP-004', employeeName: 'Peter Kamau', department: 'Record Management', leaveType: 'annual', startDate: '2026-06-01', endDate: '2026-06-14', days: 14, reason: 'Family vacation', status: 'approved', appliedOn: '2026-05-20' },
+  { id: 'LV-001', employeeId: 'EMP-004', employeeName: 'Peter Kamau', department: 'Sales & Marketing', leaveType: 'annual', startDate: '2026-06-01', endDate: '2026-06-14', days: 14, reason: 'Family vacation', status: 'approved', appliedOn: '2026-05-20' },
   { id: 'LV-002', employeeId: 'EMP-002', employeeName: 'James Okonkwo', department: 'Farm Operations', leaveType: 'sick', startDate: '2026-06-10', endDate: '2026-06-12', days: 3, reason: 'Medical treatment', status: 'pending', appliedOn: '2026-06-04' },
   { id: 'LV-003', employeeId: 'EMP-005', employeeName: 'Grace Mwangi', department: 'IT', leaveType: 'emergency', startDate: '2026-06-04', endDate: '2026-06-04', days: 1, reason: 'Family emergency', status: 'approved', appliedOn: '2026-06-04' },
   { id: 'LV-004', employeeId: 'EMP-007', employeeName: 'Zawadi Juma', department: 'Farm Operations', leaveType: 'annual', startDate: '2026-06-20', endDate: '2026-06-25', days: 5, reason: 'Personal time', status: 'pending', appliedOn: '2026-06-03' },
