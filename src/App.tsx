@@ -36,6 +36,7 @@ import ProcurementLayout from './pages/Procurement/ProcurementLayout';
 import ProcurementDashboard from './pages/Procurement/ProcurementDashboard';
 import PurchaseRequests from './pages/Procurement/PurchaseRequests';
 import PurchaseOrders from './pages/Procurement/PurchaseOrders';
+import Suppliers from './pages/Procurement/Suppliers';
 import GoodsReceiving from './pages/Procurement/GoodsReceiving';
 import Inventory from './pages/Procurement/Inventory';
 import StockTracking from './pages/Procurement/StockTracking';
@@ -138,6 +139,7 @@ const App: React.FC = () => {
                   <Route index element={<ProcurementDashboard />} />
                   <Route path="purchase-requests" element={<PurchaseRequests />} />
                   <Route path="purchase-orders" element={<PurchaseOrders />} />
+                  <Route path="suppliers" element={<Suppliers />} />
                   <Route path="goods-receiving" element={<GoodsReceiving />} />
                   <Route path="inventory" element={<Inventory />} />
                   <Route path="stock-tracking" element={<StockTracking />} />

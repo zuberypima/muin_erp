@@ -34,6 +34,7 @@ export const ALL_SYSTEM_PAGES: SystemPageItem[] = [
   { id: 'procurement_dashboard', label: 'Procurement Dashboard', route: '/procurement', module: 'procurement', moduleLabel: 'Procurement & Purchasing' },
   { id: 'procurement_requests', label: 'Purchase Requests', route: '/procurement/purchase-requests', module: 'procurement', moduleLabel: 'Procurement & Purchasing' },
   { id: 'procurement_orders', label: 'Purchase Orders', route: '/procurement/purchase-orders', module: 'procurement', moduleLabel: 'Procurement & Purchasing' },
+  { id: 'procurement_suppliers', label: 'Suppliers & Vendors', route: '/procurement/suppliers', module: 'procurement', moduleLabel: 'Procurement & Purchasing' },
   { id: 'procurement_goods', label: 'Goods Receiving', route: '/procurement/goods-receiving', module: 'procurement', moduleLabel: 'Procurement & Purchasing' },
   { id: 'procurement_inventory', label: 'Warehouse Inventory', route: '/procurement/inventory', module: 'procurement', moduleLabel: 'Procurement & Purchasing' },
   { id: 'procurement_stock', label: 'Stock Tracking', route: '/procurement/stock-tracking', module: 'procurement', moduleLabel: 'Procurement & Purchasing' },
@@ -42,6 +43,8 @@ export const ALL_SYSTEM_PAGES: SystemPageItem[] = [
   // Logistics
   { id: 'logistics_dashboard', label: 'Logistics Dashboard', route: '/logistics', module: 'logistics', moduleLabel: 'Logistics & Supply Chain' },
   { id: 'logistics_inventory', label: 'Container Yard Inventory', route: '/logistics/inventory', module: 'logistics', moduleLabel: 'Logistics & Supply Chain' },
+  { id: 'logistics_imports', label: 'Container Imports', route: '/logistics/imports', module: 'logistics', moduleLabel: 'Logistics & Supply Chain' },
+  { id: 'logistics_exports', label: 'Container Exports', route: '/logistics/exports', module: 'logistics', moduleLabel: 'Logistics & Supply Chain' },
   { id: 'logistics_movements', label: 'Vessel & Cargo Movements', route: '/logistics/stock-tracking', module: 'logistics', moduleLabel: 'Logistics & Supply Chain' },
   { id: 'logistics_dispatches', label: 'Container Dispatches & Gate Pass', route: '/logistics/dispatches', module: 'logistics', moduleLabel: 'Logistics & Supply Chain' },
   { id: 'logistics_reports', label: 'Logistics Reports', route: '/logistics/reports', module: 'logistics', moduleLabel: 'Logistics & Supply Chain' },

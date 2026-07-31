@@ -91,34 +91,69 @@ const ProcurementDashboard: React.FC = () => {
       {/* KPI Cards */}
       <div className="proc-kpi-grid">
         <div className="proc-kpi-card blue">
-          <div className="proc-kpi-icon blue"><i className="fas fa-file-alt"></i></div>
-          <div className="proc-kpi-value">{kpi.pending_prs}</div>
-          <div className="proc-kpi-label">Pending Requests</div>
+          <div className="proc-kpi-card-header">
+            <div className="proc-kpi-icon blue"><i className="fas fa-file-alt"></i></div>
+            <span className="badge bg-primary-subtle text-primary fw-semibold" style={{ fontSize: '0.68rem', padding: '0.2rem 0.45rem', borderRadius: '6px' }}>PRs</span>
+          </div>
+          <div>
+            <div className="proc-kpi-value">{kpi.pending_prs}</div>
+            <div className="proc-kpi-label">Pending Requests</div>
+          </div>
         </div>
+
         <div className="proc-kpi-card purple">
-          <div className="proc-kpi-icon purple"><i className="fas fa-shopping-cart"></i></div>
-          <div className="proc-kpi-value">{kpi.pos_this_month}</div>
-          <div className="proc-kpi-label">POs This Month</div>
+          <div className="proc-kpi-card-header">
+            <div className="proc-kpi-icon purple"><i className="fas fa-shopping-cart"></i></div>
+            <span className="badge fw-semibold" style={{ fontSize: '0.68rem', padding: '0.2rem 0.45rem', borderRadius: '6px', color: '#7c3aed', backgroundColor: '#f3e8ff' }}>POs</span>
+          </div>
+          <div>
+            <div className="proc-kpi-value">{kpi.pos_this_month}</div>
+            <div className="proc-kpi-label">POs This Month</div>
+          </div>
         </div>
+
         <div className="proc-kpi-card amber">
-          <div className="proc-kpi-icon amber"><i className="fas fa-exclamation-triangle"></i></div>
-          <div className="proc-kpi-value">{kpi.low_stock_items}</div>
-          <div className="proc-kpi-label">Low Stock Items</div>
+          <div className="proc-kpi-card-header">
+            <div className="proc-kpi-icon amber"><i className="fas fa-exclamation-triangle"></i></div>
+            <span className="badge bg-warning-subtle text-warning fw-semibold" style={{ fontSize: '0.68rem', padding: '0.2rem 0.45rem', borderRadius: '6px' }}>Alert</span>
+          </div>
+          <div>
+            <div className="proc-kpi-value">{kpi.low_stock_items}</div>
+            <div className="proc-kpi-label">Low Stock Items</div>
+          </div>
         </div>
+
         <div className="proc-kpi-card green">
-          <div className="proc-kpi-icon green"><i className="fas fa-boxes"></i></div>
-          <div className="proc-kpi-value">{fmtKES(kpi.total_inventory_value)}</div>
-          <div className="proc-kpi-label">Inventory Value</div>
+          <div className="proc-kpi-card-header">
+            <div className="proc-kpi-icon green"><i className="fas fa-boxes"></i></div>
+            <span className="badge bg-success-subtle text-success fw-semibold" style={{ fontSize: '0.68rem', padding: '0.2rem 0.45rem', borderRadius: '6px' }}>Stock</span>
+          </div>
+          <div>
+            <div className="proc-kpi-value">{fmtKES(kpi.total_inventory_value)}</div>
+            <div className="proc-kpi-label">Inventory Value</div>
+          </div>
         </div>
+
         <div className="proc-kpi-card purple">
-          <div className="proc-kpi-icon purple"><i className="fas fa-laptop"></i></div>
-          <div className="proc-kpi-value">{fmtKES(kpi.total_asset_value)}</div>
-          <div className="proc-kpi-label">Asset Value</div>
+          <div className="proc-kpi-card-header">
+            <div className="proc-kpi-icon purple"><i className="fas fa-laptop"></i></div>
+            <span className="badge fw-semibold" style={{ fontSize: '0.68rem', padding: '0.2rem 0.45rem', borderRadius: '6px', color: '#7c3aed', backgroundColor: '#f3e8ff' }}>Assets</span>
+          </div>
+          <div>
+            <div className="proc-kpi-value">{fmtKES(kpi.total_asset_value)}</div>
+            <div className="proc-kpi-label">Asset Value</div>
+          </div>
         </div>
+
         <div className="proc-kpi-card green">
-          <div className="proc-kpi-icon green"><i className="fas fa-truck"></i></div>
-          <div className="proc-kpi-value">{kpi.active_suppliers}</div>
-          <div className="proc-kpi-label">Active Suppliers</div>
+          <div className="proc-kpi-card-header">
+            <div className="proc-kpi-icon green"><i className="fas fa-truck"></i></div>
+            <span className="badge bg-success-subtle text-success fw-semibold" style={{ fontSize: '0.68rem', padding: '0.2rem 0.45rem', borderRadius: '6px' }}>Vendors</span>
+          </div>
+          <div>
+            <div className="proc-kpi-value">{kpi.active_suppliers}</div>
+            <div className="proc-kpi-label">Active Suppliers</div>
+          </div>
         </div>
       </div>
 

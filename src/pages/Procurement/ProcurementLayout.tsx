@@ -10,6 +10,7 @@ const ProcurementLayout: React.FC = () => {
     { to: '/procurement', label: 'Overview',          icon: 'fas fa-chart-bar',       end: true },
     { to: '/procurement/purchase-requests', label: 'Purchase Requests', icon: 'fas fa-file-alt' },
     { to: '/procurement/purchase-orders',   label: 'Purchase Orders',   icon: 'fas fa-shopping-cart' },
+    { to: '/procurement/suppliers',         label: 'Suppliers',         icon: 'fas fa-building' },
     { to: '/procurement/goods-receiving',   label: 'Goods Receiving',   icon: 'fas fa-truck-loading' },
     { to: '/procurement/inventory',         label: 'Inventory',         icon: 'fas fa-boxes' },
     { to: '/procurement/stock-tracking',    label: 'Stock Tracking',    icon: 'fas fa-exchange-alt' },

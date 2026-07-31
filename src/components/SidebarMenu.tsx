@@ -365,6 +365,13 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
                     </NavLink>
                   </li>
                 )}
+                {isPageAllowedForUser(user, '/procurement/suppliers') && (
+                  <li className="nav-item">
+                    <NavLink to="/procurement/suppliers" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-building nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Suppliers &amp; Vendors</span>
+                    </NavLink>
+                  </li>
+                )}
                 {isPageAllowedForUser(user, '/procurement/goods-receiving') && (
                   <li className="nav-item">
                     <NavLink to="/procurement/goods-receiving" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
@@ -423,7 +430,21 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, setIsOpen }) => {
                 {isPageAllowedForUser(user, '/logistics/inventory') && (
                   <li className="nav-item">
                     <NavLink to="/logistics/inventory" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
-                      <i className="fas fa-boxes nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Inventory &amp; Stock</span>
+                      <i className="fas fa-boxes nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>All Containers</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/logistics/imports') && (
+                  <li className="nav-item">
+                    <NavLink to="/logistics/imports" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-file-import nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Container Imports</span>
+                    </NavLink>
+                  </li>
+                )}
+                {isPageAllowedForUser(user, '/logistics/exports') && (
+                  <li className="nav-item">
+                    <NavLink to="/logistics/exports" className={({ isActive }) => `nav-link custom-nav-link ${isActive ? 'active' : ''}`} style={{ paddingLeft: '1.5rem', fontSize: '0.88rem' }}>
+                      <i className="fas fa-file-export nav-icon" style={{ fontSize: '0.9rem' }}></i> <span>Container Exports</span>
                     </NavLink>
                   </li>
                 )}
