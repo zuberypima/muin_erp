@@ -10,7 +10,9 @@ const LogisticsLayout: React.FC = () => {
 
   const navItems = [
     { to: '/logistics', label: 'Port Overview', icon: 'fas fa-anchor', end: true },
-    { to: '/logistics/inventory', label: 'Total Containers', icon: 'fas fa-boxes' },
+    { to: '/logistics/inventory', label: 'All Containers', icon: 'fas fa-boxes' },
+    { to: '/logistics/imports', label: 'Container Imports', icon: 'fas fa-file-import' },
+    { to: '/logistics/exports', label: 'Container Exports', icon: 'fas fa-file-export' },
     { to: '/logistics/stock-tracking', label: 'Vessel Voyages', icon: 'fas fa-ship' },
     { to: '/logistics/dispatches', label: 'B/L & Dispatches', icon: 'fas fa-file-invoice' },
     { to: '/logistics/reports', label: 'Shipping TEU Reports', icon: 'fas fa-chart-pie' },

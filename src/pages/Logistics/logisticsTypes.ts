@@ -9,9 +9,13 @@ export interface ContainerItem {
   terminal_yard: string; // e.g. Dar es Salaam Port Yard A, Kwala Dry Port, TAZARA ICD
   yard_slot: string; // e.g. Block C4-B3-L2
   status: 'in-yard' | 'on-vessel' | 'dispatched' | 'customs-hold';
+  flow_type?: 'import' | 'export';
+  shipper?: string;
+  consignee: string;
+  origin_port?: string;
+  destination_port?: string;
   customs_cleared: boolean;
   bill_of_lading: string;
-  consignee: string;
   gate_in_date?: string;
 }
 

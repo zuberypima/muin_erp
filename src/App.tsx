@@ -55,6 +55,8 @@ import SoftwareLicenses from './pages/IT/SoftwareLicenses';
 import LogisticsLayout from './pages/Logistics/LogisticsLayout';
 import LogisticsDashboard from './pages/Logistics/LogisticsDashboard';
 import LogisticsInventory from './pages/Logistics/LogisticsInventory';
+import LogisticsImports from './pages/Logistics/LogisticsImports';
+import LogisticsExports from './pages/Logistics/LogisticsExports';
 import LogisticsMovements from './pages/Logistics/LogisticsMovements';
 import LogisticsDispatches from './pages/Logistics/LogisticsDispatches';
 import LogisticsReports from './pages/Logistics/LogisticsReports';
@@ -147,6 +149,8 @@ const App: React.FC = () => {
                 <Route path="logistics" element={<LogisticsLayout />}>
                   <Route index element={<LogisticsDashboard />} />
                   <Route path="inventory" element={<LogisticsInventory />} />
+                  <Route path="imports" element={<LogisticsImports />} />
+                  <Route path="exports" element={<LogisticsExports />} />
                   <Route path="stock-tracking" element={<LogisticsMovements />} />
                   <Route path="dispatches" element={<LogisticsDispatches />} />
                   <Route path="reports" element={<LogisticsReports />} />

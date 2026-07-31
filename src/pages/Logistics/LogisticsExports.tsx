@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axiosConfig';
-import { ContainerItem, SHIPPING_LINES, TERMINAL_YARDS } from './logisticsTypes';
+import { ContainerItem, SHIPPING_LINES, TERMINAL_YARDS, MAJOR_PORTS } from './logisticsTypes';
 import { SkeletonTable } from '../../components/Skeleton';
 import ModalPortal from '../../components/ModalPortal';
 import ContainerDetailModal from './ContainerDetailModal';
 import '../Tasks/Tasks.css';
 
-const LogisticsInventory: React.FC = () => {
+const LogisticsExports: React.FC = () => {
   const [containers, setContainers] = useState<ContainerItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -18,26 +18,30 @@ const LogisticsInventory: React.FC = () => {
   const [error, setError] = useState('');
 
   const [form, setForm] = useState<Omit<ContainerItem, 'id'>>({
-    container_number: `MSKU-${Math.floor(100000 + Math.random() * 900000)}-${Math.floor(Math.random() * 9)}`,
+    container_number: `EXPU-${Math.floor(100000 + Math.random() * 900000)}-${Math.floor(Math.random() * 9)}`,
     size_type: '40ft HC',
-    cargo_description: 'Industrial Spare Parts & Components',
+    cargo_description: 'Tanzanian Premium Arabica Coffee Beans',
     shipping_line: SHIPPING_LINES[0],
-    seal_number: `SL-${Math.floor(100000 + Math.random() * 900000)}`,
-    gross_weight_kg: 24500,
+    seal_number: `SL-EX-${Math.floor(100000 + Math.random() * 900000)}`,
+    gross_weight_kg: 24800,
     terminal_yard: TERMINAL_YARDS[0],
-    yard_slot: 'Block A2-Bay 14-L3',
+    yard_slot: 'Block E1-Bay 08-L2',
     status: 'in-yard',
+    flow_type: 'export',
+    shipper: 'Kilimanjaro Coffee Exporters Ltd',
+    consignee: 'Hamburg Coffee Importers GmbH',
+    origin_port: MAJOR_PORTS[0],
+    destination_port: MAJOR_PORTS[4],
     customs_cleared: true,
-    bill_of_lading: `BL-TZ-${Math.floor(1000 + Math.random() * 9000)}`,
-    consignee: 'Muin Trading & Logistics Ltd',
+    bill_of_lading: `BL-EXP-${Math.floor(1000 + Math.random() * 9000)}`,
     gate_in_date: new Date().toISOString().split('T')[0]
   });
 
-  const fetchContainers = async () => {
+  const fetchExports = async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get('/logistics/containers/');
+      const res = await api.get('/logistics/containers/?flow_type=export');
       const dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
       const apiItems: ContainerItem[] = dataArr.map((i: any) => ({
         id: i.id,
@@ -50,30 +54,29 @@ const LogisticsInventory: React.FC = () => {
         terminal_yard: i.terminal_yard,
         yard_slot: i.yard_slot,
         status: i.status || 'in-yard',
+        flow_type: 'export',
+        shipper: i.shipper || 'Exporter',
+        consignee: i.consignee || 'Consignee',
+        origin_port: i.origin_port || MAJOR_PORTS[0],
+        destination_port: i.destination_port || MAJOR_PORTS[4],
         customs_cleared: Boolean(i.customs_cleared),
         bill_of_lading: i.bill_of_lading,
-        consignee: i.consignee,
-        gate_in_date: i.created_at ? i.created_at.split('T')[0] : '2026-07-31'
+        gate_in_date: i.created_at ? i.created_at.split('T')[0] : new Date().toISOString().split('T')[0]
       }));
       setContainers(apiItems);
-      localStorage.setItem('muin_logistics_containers', JSON.stringify(apiItems));
     } catch (err: any) {
-      console.warn('API fetch error (falling back to cache):', err);
-      setError('Could not connect to live backend API. Using cached local storage.');
-      try {
-        const stored = localStorage.getItem('muin_logistics_containers');
-        if (stored) setContainers(JSON.parse(stored));
-      } catch {}
+      console.warn('API fetch error for export containers:', err);
+      setError('Could not connect to live backend API. Using cached data.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchContainers();
+    fetchExports();
   }, []);
 
-  const handleAddContainer = async (e: React.FormEvent) => {
+  const handleAddExport = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError('');
@@ -88,9 +91,13 @@ const LogisticsInventory: React.FC = () => {
       terminal_yard: form.terminal_yard,
       yard_slot: form.yard_slot,
       status: form.status,
+      flow_type: 'export',
+      shipper: form.shipper,
+      consignee: form.consignee,
+      origin_port: form.origin_port,
+      destination_port: form.destination_port,
       customs_cleared: form.customs_cleared,
-      bill_of_lading: form.bill_of_lading,
-      consignee: form.consignee
+      bill_of_lading: form.bill_of_lading
     };
 
     try {
@@ -106,35 +113,41 @@ const LogisticsInventory: React.FC = () => {
         terminal_yard: res.data.terminal_yard || form.terminal_yard,
         yard_slot: res.data.yard_slot || form.yard_slot,
         status: res.data.status || form.status,
+        flow_type: 'export',
+        shipper: res.data.shipper || form.shipper,
+        consignee: res.data.consignee || form.consignee,
+        origin_port: res.data.origin_port || form.origin_port,
+        destination_port: res.data.destination_port || form.destination_port,
         customs_cleared: Boolean(res.data.customs_cleared),
         bill_of_lading: res.data.bill_of_lading || form.bill_of_lading,
-        consignee: res.data.consignee || form.consignee,
         gate_in_date: new Date().toISOString().split('T')[0]
       };
 
-      const updatedList = [newContainer, ...containers];
-      setContainers(updatedList);
-      localStorage.setItem('muin_logistics_containers', JSON.stringify(updatedList));
+      setContainers([newContainer, ...containers]);
       setShowAddModal(false);
-      // Reset form with new random values
+      // Reset form
       setForm({
-        container_number: `MSKU-${Math.floor(100000 + Math.random() * 900000)}-${Math.floor(Math.random() * 9)}`,
+        container_number: `EXPU-${Math.floor(100000 + Math.random() * 900000)}-${Math.floor(Math.random() * 9)}`,
         size_type: '40ft HC',
-        cargo_description: 'Industrial Spare Parts & Components',
+        cargo_description: 'Tanzanian Premium Arabica Coffee Beans',
         shipping_line: SHIPPING_LINES[0],
-        seal_number: `SL-${Math.floor(100000 + Math.random() * 900000)}`,
-        gross_weight_kg: 24500,
+        seal_number: `SL-EX-${Math.floor(100000 + Math.random() * 900000)}`,
+        gross_weight_kg: 24800,
         terminal_yard: TERMINAL_YARDS[0],
-        yard_slot: 'Block A2-Bay 14-L3',
+        yard_slot: 'Block E1-Bay 08-L2',
         status: 'in-yard',
+        flow_type: 'export',
+        shipper: 'Kilimanjaro Coffee Exporters Ltd',
+        consignee: 'Hamburg Coffee Importers GmbH',
+        origin_port: MAJOR_PORTS[0],
+        destination_port: MAJOR_PORTS[4],
         customs_cleared: true,
-        bill_of_lading: `BL-TZ-${Math.floor(1000 + Math.random() * 9000)}`,
-        consignee: 'Muin Trading & Logistics Ltd',
+        bill_of_lading: `BL-EXP-${Math.floor(1000 + Math.random() * 9000)}`,
         gate_in_date: new Date().toISOString().split('T')[0]
       });
     } catch (err: any) {
-      console.error('API container create error:', err);
-      const msg = err.response?.data ? JSON.stringify(err.response.data) : 'Failed to register container arrival on backend server.';
+      console.error('API export container create error:', err);
+      const msg = err.response?.data ? JSON.stringify(err.response.data) : 'Failed to log export container gate-in on backend server.';
       setError(`API Error: ${msg}`);
     } finally {
       setSaving(false);
@@ -144,15 +157,10 @@ const LogisticsInventory: React.FC = () => {
   const handleToggleCustoms = async (id: string | number, currentStatus: boolean) => {
     const targetId = String(id);
     const newStatus = !currentStatus;
-    const updated = containers.map(c => String(c.id) === targetId ? { ...c, customs_cleared: newStatus } : c);
-    setContainers(updated);
+    setContainers(containers.map(c => String(c.id) === targetId ? { ...c, customs_cleared: newStatus } : c));
     if (previewContainer && String(previewContainer.id) === targetId) {
       setPreviewContainer(prev => prev ? { ...prev, customs_cleared: newStatus } : null);
     }
-    try {
-      localStorage.setItem('muin_logistics_containers', JSON.stringify(updated));
-    } catch {}
-
     try {
       await api.patch(`/logistics/containers/${id}/`, { customs_cleared: newStatus });
     } catch (err: any) {
@@ -164,31 +172,84 @@ const LogisticsInventory: React.FC = () => {
     const matchesSearch = c.container_number.toLowerCase().includes(search.toLowerCase()) ||
                           c.bill_of_lading.toLowerCase().includes(search.toLowerCase()) ||
                           c.cargo_description.toLowerCase().includes(search.toLowerCase()) ||
-                          c.consignee.toLowerCase().includes(search.toLowerCase());
+                          (c.shipper && c.shipper.toLowerCase().includes(search.toLowerCase())) ||
+                          (c.destination_port && c.destination_port.toLowerCase().includes(search.toLowerCase()));
     const matchesLine = shippingFilter === 'all' || c.shipping_line === shippingFilter;
     const matchesYard = yardFilter === 'all' || c.terminal_yard === yardFilter;
     return matchesSearch && matchesLine && matchesYard;
   });
 
+  const totalExportTEUs = containers.reduce((sum, c) => sum + (c.size_type.includes('40ft') ? 2 : 1), 0);
+  const clearedExports = containers.filter(c => c.customs_cleared).length;
+  const onVesselCount = containers.filter(c => c.status === 'on-vessel').length;
+
   return (
     <div className="container-fluid p-0 fade-in">
+      {/* Export KPIs */}
+      <div className="row g-3 mb-4">
+        <div className="col-md-4">
+          <div className="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-success">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <p className="text-muted small fw-semibold text-uppercase mb-1">Total Export TEUs</p>
+                <h3 className="fw-bold text-dark mb-0">{totalExportTEUs.toLocaleString()} <span className="fs-6 fw-normal text-muted">TEUs</span></h3>
+                <small className="text-success fw-semibold">{containers.length} Outbound Containers</small>
+              </div>
+              <div className="bg-success-subtle text-success rounded-3 p-3 d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px' }}>
+                <i className="fas fa-file-export fs-4"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-4">
+          <div className="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-primary">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <p className="text-muted small fw-semibold text-uppercase mb-1">TRA Cleared Outbound</p>
+                <h3 className="fw-bold text-dark mb-0">{clearedExports} <span className="fs-6 fw-normal text-muted">Cleared</span></h3>
+                <small className="text-primary fw-semibold">Passed Customs Inspection</small>
+              </div>
+              <div className="bg-primary-subtle text-primary rounded-3 p-3 d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px' }}>
+                <i className="fas fa-certificate fs-4"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-4">
+          <div className="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-info">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <p className="text-muted small fw-semibold text-uppercase mb-1">Loaded on Vessel</p>
+                <h3 className="fw-bold text-dark mb-0">{onVesselCount} <span className="fs-6 fw-normal text-muted">On-Board</span></h3>
+                <small className="text-info fw-semibold">Quay Crane Stuffed / Loaded</small>
+              </div>
+              <div className="bg-info-subtle text-info rounded-3 p-3 d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px' }}>
+                <i className="fas fa-ship fs-4"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white border rounded-3 shadow-sm p-4 mb-4">
-        {/* Controls Row */}
+        {/* Controls Header */}
         <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
           <div>
-            <h5 className="fw-bold text-dark mb-1">Container Terminal Yard Inventory</h5>
-            <p className="text-muted small mb-0">Track container slots, B/L numbers, seal codes, gross weights, and TRA customs releases.</p>
+            <h5 className="fw-bold text-dark mb-1"><i className="fas fa-file-export text-success me-2"></i>Exported Container Cargo Management</h5>
+            <p className="text-muted small mb-0">Track outbound ocean cargo, shippers/exporters, destination ports, booking B/Ls, and vessel stuffing.</p>
           </div>
           <div className="d-flex gap-2">
-            <button className="btn btn-outline-secondary btn-sm px-3" onClick={fetchContainers} title="Refresh Containers from Server">
+            <button className="btn btn-outline-secondary btn-sm px-3" onClick={fetchExports} title="Refresh Export Containers">
               <i className="fas fa-sync-alt me-1"></i>Refresh
             </button>
             <button
-              className="btn btn-primary text-white fw-bold px-3 shadow-sm"
+              className="btn btn-success text-white fw-bold px-3 shadow-sm"
               onClick={() => setShowAddModal(true)}
               style={{ borderRadius: '8px' }}
             >
-              <i className="fas fa-box me-2"></i>Log Container Gate In
+              <i className="fas fa-plus-circle me-2"></i>Log Export Container Gate-In
             </button>
           </div>
         </div>
@@ -198,7 +259,7 @@ const LogisticsInventory: React.FC = () => {
           <div className="col-md-4">
             <input
               type="text" className="form-control"
-              placeholder="Search Container #, B/L, Cargo or Consignee..."
+              placeholder="Search Export Container #, Booking B/L, Shipper, Destination Port..."
               value={search} onChange={e => setSearch(e.target.value)}
             />
           </div>
@@ -231,21 +292,21 @@ const LogisticsInventory: React.FC = () => {
               <thead className="table-light">
                 <tr>
                   <th>Container #</th>
-                  <th>Type & Size</th>
+                  <th>Shipper / Exporter</th>
+                  <th>Destination Port</th>
                   <th>Shipping Line</th>
-                  <th>Cargo Description</th>
-                  <th>Yard Location</th>
-                  <th>Bill of Lading</th>
-                  <th>Consignee</th>
-                  <th>Customs Status</th>
-                  <th className="text-end pe-3" style={{ minWidth: '90px' }}>Preview</th>
+                  <th>Export Cargo</th>
+                  <th>Terminal Yard</th>
+                  <th>Booking B/L #</th>
+                  <th>TRA Export Release</th>
+                  <th className="text-end pe-3">Preview</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredContainers.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="text-center text-muted py-4">
-                      No containers found matching selected search or filter criteria.
+                      No exported containers found for selected search or filter criteria.
                     </td>
                   </tr>
                 ) : (
@@ -254,41 +315,34 @@ const LogisticsInventory: React.FC = () => {
                       key={c.id}
                       className="clickable-row"
                       onClick={() => setPreviewContainer(c)}
-                      title="Click row to preview full container inventory details"
                     >
                       <td className="fw-bold text-dark">
                         <div className="d-flex align-items-center gap-1.5">
-                          <button
-                            className="btn btn-link p-0 fw-bold text-dark text-start text-decoration-none"
-                            onClick={(e) => { e.stopPropagation(); setPreviewContainer(c); }}
-                          >
-                            {c.container_number}
-                          </button>
-                          <i className="fas fa-external-link-alt text-muted ms-1" style={{ fontSize: '0.68rem', opacity: 0.6 }}></i>
+                          <span>{c.container_number}</span>
+                          <span className="badge bg-secondary ms-1">{c.size_type}</span>
                         </div>
                       </td>
-                      <td><span className="badge bg-secondary">{c.size_type}</span></td>
+                      <td className="fw-semibold text-dark">{c.shipper || 'Exporter Co'}</td>
+                      <td className="fw-semibold text-success">{c.destination_port || 'Port of Hamburg'}</td>
                       <td>{c.shipping_line}</td>
                       <td>
                         <div className="text-truncate" style={{ maxWidth: '180px' }}>{c.cargo_description}</div>
                         <small className="text-muted">Seal: {c.seal_number}</small>
                       </td>
                       <td>
-                        <span className="d-block fw-semibold text-primary">{c.terminal_yard}</span>
+                        <span className="d-block fw-semibold text-dark">{c.terminal_yard}</span>
                         <small className="text-muted">{c.yard_slot}</small>
                       </td>
-                      <td className="fw-semibold">{c.bill_of_lading}</td>
-                      <td>{c.consignee}</td>
+                      <td className="fw-semibold text-primary">{c.bill_of_lading}</td>
                       <td>
                         <span className={`badge ${c.customs_cleared ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning border border-warning-subtle'} px-2.5 py-1.5 fw-bold`} style={{ borderRadius: '6px' }}>
-                          {c.customs_cleared ? <><i className="fas fa-check-circle me-1"></i>TRA Cleared</> : <><i className="fas fa-clock me-1"></i>Hold / Pending</>}
+                          {c.customs_cleared ? <><i className="fas fa-check-circle me-1"></i>Export Released</> : <><i className="fas fa-clock me-1"></i>Pending Release</>}
                         </span>
                       </td>
                       <td className="text-end pe-3" onClick={(e) => e.stopPropagation()}>
                         <button
                           className="preview-row-btn"
                           onClick={() => setPreviewContainer(c)}
-                          title="Click to preview container details"
                         >
                           <i className="fas fa-eye"></i> View
                         </button>
@@ -308,11 +362,11 @@ const LogisticsInventory: React.FC = () => {
           <div className="modal show d-block tab-fade">
             <div className="modal-dialog modal-lg">
               <div className="modal-content border-0 shadow-lg">
-                <div className="modal-header bg-primary text-white">
-                  <h5 className="modal-title fw-bold">Log Container Gate-In Arrival</h5>
+                <div className="modal-header bg-success text-white">
+                  <h5 className="modal-title fw-bold"><i className="fas fa-file-export me-2"></i>Log Export Container Gate-In Arrival</h5>
                   <button type="button" className="btn-close btn-close-white" onClick={() => setShowAddModal(false)}></button>
                 </div>
-                <form onSubmit={handleAddContainer}>
+                <form onSubmit={handleAddExport}>
                   <div className="modal-body">
                     <div className="row g-3">
                       <div className="col-md-6">
@@ -329,31 +383,41 @@ const LogisticsInventory: React.FC = () => {
                         </select>
                       </div>
                       <div className="col-md-6">
+                        <label className="form-label fw-bold">Shipper / Exporter Name</label>
+                        <input type="text" className="form-control" required value={form.shipper} onChange={e => setForm({...form, shipper: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Destination Port (Discharge Port)</label>
+                        <select className="form-select" value={form.destination_port} onChange={e => setForm({...form, destination_port: e.target.value})}>
+                          {MAJOR_PORTS.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </div>
+                      <div className="col-md-6">
                         <label className="form-label fw-bold">Shipping Line</label>
                         <select className="form-select" value={form.shipping_line} onChange={e => setForm({...form, shipping_line: e.target.value})}>
                           {SHIPPING_LINES.map(line => <option key={line} value={line}>{line}</option>)}
                         </select>
                       </div>
                       <div className="col-md-6">
-                        <label className="form-label fw-bold">Bill of Lading #</label>
+                        <label className="form-label fw-bold">Booking B/L Reference #</label>
                         <input type="text" className="form-control" required value={form.bill_of_lading} onChange={e => setForm({...form, bill_of_lading: e.target.value})} />
                       </div>
                       <div className="col-md-12">
-                        <label className="form-label fw-bold">Cargo Description</label>
+                        <label className="form-label fw-bold">Export Cargo Description</label>
                         <input type="text" className="form-control" required value={form.cargo_description} onChange={e => setForm({...form, cargo_description: e.target.value})} />
                       </div>
                       <div className="col-md-6">
-                        <label className="form-label fw-bold">Terminal Yard Location</label>
+                        <label className="form-label fw-bold">Terminal Stacking Yard Location</label>
                         <input
                           type="text"
                           className="form-control"
                           required
-                          list="terminal-yard-list"
+                          list="export-terminal-yard-list"
                           placeholder="Type manual yard or pick from previous entries..."
                           value={form.terminal_yard}
                           onChange={e => setForm({...form, terminal_yard: e.target.value})}
                         />
-                        <datalist id="terminal-yard-list">
+                        <datalist id="export-terminal-yard-list">
                           {Array.from(new Set([...containers.map(c => c.terminal_yard).filter(Boolean), ...TERMINAL_YARDS])).map(yard => (
                             <option key={yard} value={yard} />
                           ))}
@@ -364,19 +428,19 @@ const LogisticsInventory: React.FC = () => {
                         <input type="text" className="form-control" required value={form.yard_slot} onChange={e => setForm({...form, yard_slot: e.target.value})} />
                       </div>
                       <div className="col-md-6">
-                        <label className="form-label fw-bold">Consignee</label>
-                        <input type="text" className="form-control" required value={form.consignee} onChange={e => setForm({...form, consignee: e.target.value})} />
-                      </div>
-                      <div className="col-md-6">
                         <label className="form-label fw-bold">Seal Number</label>
                         <input type="text" className="form-control" required value={form.seal_number} onChange={e => setForm({...form, seal_number: e.target.value})} />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-bold">Verified Gross Mass (VGM - Kg)</label>
+                        <input type="number" className="form-control" required value={form.gross_weight_kg} onChange={e => setForm({...form, gross_weight_kg: Number(e.target.value)})} />
                       </div>
                     </div>
                   </div>
                   <div className="modal-footer bg-light">
                     <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
-                    <button type="submit" className="btn btn-primary" disabled={saving}>
-                      {saving ? 'Saving...' : 'Register Container Arrival'}
+                    <button type="submit" className="btn btn-success text-white" disabled={saving}>
+                      {saving ? 'Saving...' : 'Register Export Gate-In'}
                     </button>
                   </div>
                 </form>
@@ -386,7 +450,7 @@ const LogisticsInventory: React.FC = () => {
         </ModalPortal>
       )}
 
-      {/* Container Inventory Detail Preview Modal */}
+      {/* Container Detail Modal */}
       {previewContainer && (
         <ContainerDetailModal
           container={previewContainer}
@@ -398,4 +462,4 @@ const LogisticsInventory: React.FC = () => {
   );
 };
 
-export default LogisticsInventory;
+export default LogisticsExports;

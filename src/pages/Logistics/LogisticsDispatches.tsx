@@ -6,11 +6,6 @@ import ModalPortal from '../../components/ModalPortal';
 import DispatchDetailModal from './DispatchDetailModal';
 import '../Tasks/Tasks.css';
 
-const INITIAL_DEMO_DISPATCHES: ContainerDispatch[] = [
-  { id: 1, bill_of_lading: 'BL-TZ-9812', container_number: 'MSKU-892140-5', shipper: 'Muin Agriculture Corp', consignee: 'Zambia Mining Supplies Ltd', destination_city: 'Lusaka (Zambia Transit)', transport_mode: 'Road Transport (Truck)', truck_plate_or_train: 'T 812 BCD (Scania Heavy)', driver_name: 'Rashid Bakari', status: 'in-transit', dispatch_date: '2026-07-24', customs_release_ref: 'TRA-REL-44102' },
-  { id: 2, bill_of_lading: 'BL-TZ-9813', container_number: 'MEDU-441209-1', shipper: 'Shanghai Trading Co', consignee: 'Rwanda Commercial Depot', destination_city: 'Kigali (Rwanda)', transport_mode: 'Rail Freight (TAZARA)', truck_plate_or_train: 'TAZARA Freight Train 04', driver_name: 'TAZARA Rail Ops', status: 'gate-pass-issued', dispatch_date: '2026-07-25', customs_release_ref: 'TRA-REL-44103' },
-  { id: 3, bill_of_lading: 'BL-TZ-9815', container_number: 'PILU-119204-3', shipper: 'Global Pipe Manufacturers', consignee: 'Ruvu Dry Port Depot', destination_city: 'Kwala Dry Port (Tanzania)', transport_mode: 'Road Transport (Truck)', truck_plate_or_train: 'T 330 KJL', driver_name: 'Peter Swai', status: 'delivered-consignee', dispatch_date: '2026-07-20', customs_release_ref: 'TRA-REL-44104' },
-];
 
 const LogisticsDispatches: React.FC = () => {
   const [dispatches, setDispatches] = useState<ContainerDispatch[]>([]);
@@ -38,63 +33,35 @@ const LogisticsDispatches: React.FC = () => {
   const fetchDispatches = async () => {
     setLoading(true);
     setError('');
-    let apiItems: ContainerDispatch[] = [];
-    let apiSuccess = false;
-
-    // 1. Try endpoints in sequence
-    const endpoints = ['/logistics/dispatches/', '/dispatches/', '/logistics-dispatches/'];
-    for (const ep of endpoints) {
-      try {
-        const res = await api.get(ep);
-        const dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
-        if (dataArr.length >= 0) {
-          apiItems = dataArr.map((d: any) => ({
-            id: d.id,
-            bill_of_lading: d.bill_of_lading || d.bol_number || 'BL-TZ-0000',
-            container_number: d.container_number || d.container_no || 'MSKU-000000-0',
-            shipper: d.shipper || 'Shipper Company',
-            consignee: d.consignee || 'Consignee',
-            destination_city: d.destination_city || d.destination || 'Lusaka',
-            transport_mode: d.transport_mode || 'Road Transport (Truck)',
-            truck_plate_or_train: d.truck_plate_or_train || d.vehicle_code || 'T 000 ABC',
-            driver_name: d.driver_name || d.driver || 'Driver',
-            status: d.status || 'in-transit',
-            dispatch_date: d.dispatch_date || d.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-            customs_release_ref: d.customs_release_ref || 'TRA-REL-00000'
-          }));
-          apiSuccess = true;
-          break;
-        }
-      } catch (err) {
-        // Continue to next endpoint candidate
-      }
-    }
-
-    // 2. Retrieve locally saved dispatches from localStorage
-    let cached: ContainerDispatch[] = [];
     try {
-      const stored = localStorage.getItem('muin_logistics_dispatches');
-      if (stored) cached = JSON.parse(stored);
-    } catch {}
-
-    if (apiSuccess && apiItems.length > 0) {
-      // Merge unique items prioritizing API
-      const combined = [...apiItems];
-      cached.forEach(c => {
-        if (!combined.some(i => String(i.id) === String(c.id) || i.container_number === c.container_number)) {
-          combined.push(c);
-        }
-      });
-      setDispatches(combined);
-      localStorage.setItem('muin_logistics_dispatches', JSON.stringify(combined));
-    } else if (cached.length > 0) {
-      setDispatches(cached);
-    } else {
-      // Initialize with demo list and store
-      setDispatches(INITIAL_DEMO_DISPATCHES);
-      localStorage.setItem('muin_logistics_dispatches', JSON.stringify(INITIAL_DEMO_DISPATCHES));
+      const res = await api.get('/logistics/dispatches/');
+      const dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+      const apiItems: ContainerDispatch[] = dataArr.map((d: any) => ({
+        id: d.id,
+        bill_of_lading: d.bill_of_lading,
+        container_number: d.container_number,
+        shipper: d.shipper,
+        consignee: d.consignee,
+        destination_city: d.destination_city,
+        transport_mode: d.transport_mode,
+        truck_plate_or_train: d.truck_plate_or_train,
+        driver_name: d.driver_name,
+        status: d.status || 'in-transit',
+        dispatch_date: d.dispatch_date || new Date().toISOString().split('T')[0],
+        customs_release_ref: d.customs_release_ref
+      }));
+      setDispatches(apiItems);
+      localStorage.setItem('muin_logistics_dispatches', JSON.stringify(apiItems));
+    } catch (err: any) {
+      console.warn('API fetch error (falling back to cache):', err);
+      setError('Could not connect to live backend API. Using cached local storage.');
+      try {
+        const stored = localStorage.getItem('muin_logistics_dispatches');
+        if (stored) setDispatches(JSON.parse(stored));
+      } catch {}
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -106,62 +73,70 @@ const LogisticsDispatches: React.FC = () => {
     setSaving(true);
     setError('');
 
-    let createdRecord: ContainerDispatch | null = null;
+    const payload = {
+      bill_of_lading: form.bill_of_lading,
+      container_number: form.container_number,
+      shipper: form.shipper,
+      consignee: form.consignee,
+      destination_city: form.destination_city,
+      transport_mode: form.transport_mode,
+      truck_plate_or_train: form.truck_plate_or_train,
+      driver_name: form.driver_name,
+      status: form.status,
+      dispatch_date: form.dispatch_date,
+      customs_release_ref: form.customs_release_ref
+    };
 
-    // Push to API endpoints
-    const postEndpoints = ['/logistics/dispatches/', '/dispatches/', '/logistics-dispatches/'];
-    for (const ep of postEndpoints) {
-      try {
-        const res = await api.post(ep, form);
-        if (res.data) {
-          createdRecord = {
-            id: res.data.id || `DISP-${Date.now()}`,
-            ...form
-          };
-          break;
-        }
-      } catch (err) {
-        // try fallback
-      }
-    }
-
-    if (!createdRecord) {
-      // Fallback local save if offline
-      createdRecord = {
-        id: `DISP-${Date.now()}`,
-        ...form
-      };
-    }
-
-    const updatedList = [createdRecord, ...dispatches];
-    setDispatches(updatedList);
     try {
-      localStorage.setItem('muin_logistics_dispatches', JSON.stringify(updatedList));
-    } catch {}
+      const res = await api.post('/logistics/dispatches/', payload);
+      const newDispatch: ContainerDispatch = {
+        id: res.data.id,
+        bill_of_lading: res.data.bill_of_lading || form.bill_of_lading,
+        container_number: res.data.container_number || form.container_number,
+        shipper: res.data.shipper || form.shipper,
+        consignee: res.data.consignee || form.consignee,
+        destination_city: res.data.destination_city || form.destination_city,
+        transport_mode: res.data.transport_mode || form.transport_mode,
+        truck_plate_or_train: res.data.truck_plate_or_train || form.truck_plate_or_train,
+        driver_name: res.data.driver_name || form.driver_name,
+        status: res.data.status || form.status,
+        dispatch_date: res.data.dispatch_date || form.dispatch_date,
+        customs_release_ref: res.data.customs_release_ref || form.customs_release_ref
+      };
 
-    setShowModal(false);
-    setSaving(false);
-    // Reset form with new generated codes
-    setForm({
-      bill_of_lading: `BL-TZ-${Math.floor(1000 + Math.random() * 9000)}`,
-      container_number: `MSKU-${Math.floor(100000 + Math.random() * 900000)}-${Math.floor(Math.random() * 9)}`,
-      shipper: 'Muin Global Shipping Corp',
-      consignee: 'Zambia Mining & Industrial Corp',
-      destination_city: 'Lusaka (Zambia Transit)',
-      transport_mode: 'Road Transport (Truck)',
-      truck_plate_or_train: 'T 812 BCD (Heavy Hauler)',
-      driver_name: 'Rashid Bakari',
-      status: 'in-transit',
-      dispatch_date: new Date().toISOString().split('T')[0],
-      customs_release_ref: `TRA-REL-${Math.floor(10000 + Math.random() * 90000)}`
-    });
+      const updatedList = [newDispatch, ...dispatches];
+      setDispatches(updatedList);
+      localStorage.setItem('muin_logistics_dispatches', JSON.stringify(updatedList));
+      setShowModal(false);
+
+      // Reset form with new generated codes
+      setForm({
+        bill_of_lading: `BL-TZ-${Math.floor(1000 + Math.random() * 9000)}`,
+        container_number: `MSKU-${Math.floor(100000 + Math.random() * 900000)}-${Math.floor(Math.random() * 9)}`,
+        shipper: 'Muin Global Shipping Corp',
+        consignee: 'Zambia Mining & Industrial Corp',
+        destination_city: 'Lusaka (Zambia Transit)',
+        transport_mode: 'Road Transport (Truck)',
+        truck_plate_or_train: 'T 812 BCD (Heavy Hauler)',
+        driver_name: 'Rashid Bakari',
+        status: 'in-transit',
+        dispatch_date: new Date().toISOString().split('T')[0],
+        customs_release_ref: `TRA-REL-${Math.floor(10000 + Math.random() * 90000)}`
+      });
+    } catch (err: any) {
+      console.error('API dispatch create error:', err);
+      const msg = err.response?.data ? JSON.stringify(err.response.data) : 'Failed to issue dispatch pass on backend server.';
+      setError(`API Error: ${msg}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleStatusUpdate = async (id: string | number, newStatus: ContainerDispatch['status']) => {
-    // 1. Update UI state instantly
-    const updated = dispatches.map(d => String(d.id) === String(id) ? { ...d, status: newStatus } : d);
+    const targetId = String(id);
+    const updated = dispatches.map(d => String(d.id) === targetId ? { ...d, status: newStatus } : d);
     setDispatches(updated);
-    if (previewDispatch && String(previewDispatch.id) === String(id)) {
+    if (previewDispatch && String(previewDispatch.id) === targetId) {
       setPreviewDispatch(prev => prev ? { ...prev, status: newStatus } : null);
     }
 
@@ -169,13 +144,10 @@ const LogisticsDispatches: React.FC = () => {
       localStorage.setItem('muin_logistics_dispatches', JSON.stringify(updated));
     } catch {}
 
-    // 2. Patch to API
     try {
-      await api.patch(`/logistics/dispatches/${id}/`, { status: newStatus }).catch(async () => {
-        return await api.patch(`/dispatches/${id}/`, { status: newStatus });
-      });
-    } catch (err) {
-      console.warn('API status patch failed (offline/saved locally):', err);
+      await api.patch(`/logistics/dispatches/${id}/`, { status: newStatus });
+    } catch (err: any) {
+      console.error('API dispatch status update error:', err);
     }
   };
 

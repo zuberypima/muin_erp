@@ -29,62 +29,35 @@ const LogisticsMovements: React.FC = () => {
   const fetchVessels = async () => {
     setLoading(true);
     setError('');
-    let apiItems: VesselVoyage[] = [];
-    let apiSuccess = false;
-
-    const endpoints = ['/logistics/vessels/', '/vessels/', '/logistics-vessels/'];
-    for (const ep of endpoints) {
-      try {
-        const res = await api.get(ep);
-        const dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
-        if (dataArr.length >= 0) {
-          apiItems = dataArr.map((v: any) => ({
-            id: v.id,
-            vessel_name: v.vessel_name || 'MV Muin Trader',
-            imo_number: v.imo_number || 'IMO 0000000',
-            voyage_number: v.voyage_number || 'V.2026-00',
-            origin_port: v.origin_port || MAJOR_PORTS[4],
-            destination_port: v.destination_port || MAJOR_PORTS[0],
-            eta: v.eta ? v.eta.replace('T', ' ').substring(0, 16) : '2026-07-25 08:00',
-            etd: v.etd ? v.etd.replace('T', ' ').substring(0, 16) : '2026-07-27 18:00',
-            berth_no: v.berth_no || 'Berth 01',
-            total_teus: Number(v.total_teus) || 2400,
-            status: v.status || 'berthing-loading',
-            shipping_line: v.shipping_line || SHIPPING_LINES[0]
-          }));
-          apiSuccess = true;
-          break;
-        }
-      } catch (err) {}
-    }
-
-    let cached: VesselVoyage[] = [];
     try {
-      const stored = localStorage.getItem('muin_logistics_vessels');
-      if (stored) cached = JSON.parse(stored);
-    } catch {}
-
-    if (apiSuccess && apiItems.length > 0) {
-      const combined = [...apiItems];
-      cached.forEach(c => {
-        if (!combined.some(i => String(i.id) === String(c.id) || i.imo_number === c.imo_number)) {
-          combined.push(c);
-        }
-      });
-      setVessels(combined);
-      localStorage.setItem('muin_logistics_vessels', JSON.stringify(combined));
-    } else if (cached.length > 0) {
-      setVessels(cached);
-    } else {
-      const demo: VesselVoyage[] = [
-        { id: 1, vessel_name: 'MSC Irina', imo_number: 'IMO 9929429', voyage_number: 'V.2026-04E', origin_port: MAJOR_PORTS[5], destination_port: MAJOR_PORTS[0], eta: '2026-07-25 08:00', etd: '2026-07-27 18:00', berth_no: 'Berth 04', total_teus: 2800, status: 'berthing-loading', shipping_line: 'MSC (Mediterranean Shipping Co)' },
-        { id: 2, vessel_name: 'CMA CGM Oceanus', imo_number: 'IMO 9741029', voyage_number: 'V.8802-W', origin_port: MAJOR_PORTS[6], destination_port: MAJOR_PORTS[1], eta: '2026-07-26 14:30', etd: '2026-07-28 12:00', berth_no: 'Berth 02', total_teus: 1850, status: 'at-anchor', shipping_line: 'CMA CGM' },
-        { id: 3, vessel_name: 'Maersk Mc-Kinney', imo_number: 'IMO 9632064', voyage_number: 'V.9021-S', origin_port: MAJOR_PORTS[4], destination_port: MAJOR_PORTS[0], eta: '2026-07-28 06:00', etd: '2026-07-30 20:00', berth_no: 'Berth 07', total_teus: 4200, status: 'sailing', shipping_line: 'Maersk Line' },
-      ];
-      setVessels(demo);
-      localStorage.setItem('muin_logistics_vessels', JSON.stringify(demo));
+      const res = await api.get('/logistics/vessels/');
+      const dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+      const apiItems: VesselVoyage[] = dataArr.map((v: any) => ({
+        id: v.id,
+        vessel_name: v.vessel_name,
+        imo_number: v.imo_number,
+        voyage_number: v.voyage_number,
+        origin_port: v.origin_port,
+        destination_port: v.destination_port,
+        eta: v.eta ? v.eta.replace('T', ' ').substring(0, 16) : '2026-07-31 10:00',
+        etd: v.etd ? v.etd.replace('T', ' ').substring(0, 16) : '2026-08-02 18:00',
+        berth_no: v.berth_no,
+        total_teus: Number(v.total_teus) || 0,
+        status: v.status || 'berthing-loading',
+        shipping_line: v.shipping_line
+      }));
+      setVessels(apiItems);
+      localStorage.setItem('muin_logistics_vessels', JSON.stringify(apiItems));
+    } catch (err: any) {
+      console.warn('API fetch error (falling back to cache):', err);
+      setError('Could not connect to live backend API. Using cached local storage.');
+      try {
+        const stored = localStorage.getItem('muin_logistics_vessels');
+        if (stored) setVessels(JSON.parse(stored));
+      } catch {}
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -96,40 +69,63 @@ const LogisticsMovements: React.FC = () => {
     setSaving(true);
     setError('');
 
-    let createdRecord: VesselVoyage | null = null;
-    const postEndpoints = ['/logistics/vessels/', '/vessels/', '/logistics-vessels/'];
-    for (const ep of postEndpoints) {
-      try {
-        const res = await api.post(ep, form);
-        if (res.data) {
-          createdRecord = {
-            id: res.data.id || `VESSEL-${Date.now()}`,
-            ...form,
-            eta: form.eta.replace('T', ' ').substring(0, 16),
-            etd: form.etd.replace('T', ' ').substring(0, 16)
-          };
-          break;
-        }
-      } catch (err) {}
-    }
+    const payload = {
+      vessel_name: form.vessel_name,
+      imo_number: form.imo_number,
+      voyage_number: form.voyage_number,
+      origin_port: form.origin_port,
+      destination_port: form.destination_port,
+      eta: form.eta,
+      etd: form.etd,
+      berth_no: form.berth_no,
+      total_teus: Number(form.total_teus),
+      status: form.status,
+      shipping_line: form.shipping_line
+    };
 
-    if (!createdRecord) {
-      createdRecord = {
-        id: `VESSEL-${Date.now()}`,
-        ...form,
-        eta: form.eta.replace('T', ' ').substring(0, 16),
-        etd: form.etd.replace('T', ' ').substring(0, 16)
-      };
-    }
-
-    const updatedList = [createdRecord, ...vessels];
-    setVessels(updatedList);
     try {
-      localStorage.setItem('muin_logistics_vessels', JSON.stringify(updatedList));
-    } catch {}
+      const res = await api.post('/logistics/vessels/', payload);
+      const newVessel: VesselVoyage = {
+        id: res.data.id,
+        vessel_name: res.data.vessel_name || form.vessel_name,
+        imo_number: res.data.imo_number || form.imo_number,
+        voyage_number: res.data.voyage_number || form.voyage_number,
+        origin_port: res.data.origin_port || form.origin_port,
+        destination_port: res.data.destination_port || form.destination_port,
+        eta: (res.data.eta || form.eta).replace('T', ' ').substring(0, 16),
+        etd: (res.data.etd || form.etd).replace('T', ' ').substring(0, 16),
+        berth_no: res.data.berth_no || form.berth_no,
+        total_teus: Number(res.data.total_teus) || form.total_teus,
+        status: res.data.status || form.status,
+        shipping_line: res.data.shipping_line || form.shipping_line
+      };
 
-    setShowModal(false);
-    setSaving(false);
+      const updatedList = [newVessel, ...vessels];
+      setVessels(updatedList);
+      localStorage.setItem('muin_logistics_vessels', JSON.stringify(updatedList));
+      setShowModal(false);
+
+      // Reset form
+      setForm({
+        vessel_name: 'MV Muin Horizon',
+        imo_number: `IMO ${Math.floor(9000000 + Math.random() * 900000)}`,
+        voyage_number: `V.2026-${Math.floor(10 + Math.random() * 90)}E`,
+        origin_port: MAJOR_PORTS[4],
+        destination_port: MAJOR_PORTS[0],
+        eta: new Date().toISOString().split('T')[0] + 'T10:00:00Z',
+        etd: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0] + 'T18:00:00Z',
+        berth_no: 'Berth 05',
+        total_teus: 3200,
+        status: 'berthing-loading',
+        shipping_line: SHIPPING_LINES[0]
+      });
+    } catch (err: any) {
+      console.error('API vessel create error:', err);
+      const msg = err.response?.data ? JSON.stringify(err.response.data) : 'Failed to schedule vessel voyage on backend server.';
+      setError(`API Error: ${msg}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const filteredVessels = vessels.filter(v => filterStatus === 'all' || v.status === filterStatus);

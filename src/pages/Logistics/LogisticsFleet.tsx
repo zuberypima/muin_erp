@@ -24,19 +24,29 @@ const LogisticsFleet: React.FC = () => {
   });
 
   const fetchAssets = async () => {
+    setLoading(true);
+    setError('');
     try {
-      const res = await api.get('/procurement/assets/').catch(() => ({ data: [] }));
-      const mapped: MarineAsset[] = (res.data || []).map((a: any, idx: number) => ({
+      let dataArr: any[] = [];
+      try {
+        const res = await api.get('/assets/fixed-assets/?category=Marine');
+        dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+      } catch {
+        const res = await api.get('/procurement/assets/');
+        dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+      }
+
+      const mapped: MarineAsset[] = dataArr.map((a: any, idx: number) => ({
         id: a.id || idx + 1,
-        asset_tag: a.asset_tag || `MAR-20${idx}`,
-        name: a.name || a.asset_name || 'Port Equipment',
-        asset_type: a.asset_type || 'Reach Stacker',
-        registration_number: a.registration_number || a.location || `TZ-EQ-90${idx}`,
-        terminal_base: a.terminal_base || TERMINAL_YARDS[0],
-        operator_name: a.operator_name || 'Port Crane Operator',
-        status: a.status === 'under_maintenance' ? 'under-maintenance' : 'operational',
-        capacity: a.capacity || '45-Ton Capacity',
-        last_inspection: a.last_inspection || '2026-07-01'
+        asset_tag: a.asset_tag || `MAR-${100 + idx}`,
+        name: a.name || a.asset_name || 'Port Marine Asset',
+        asset_type: a.asset_type || (a.category === 'Vehicles' ? 'Haulage Truck' : 'Tugboat'),
+        registration_number: a.registration_number || a.serial_number || a.location || `TZ-EQ-${8800 + idx}`,
+        terminal_base: a.terminal_base || a.location || TERMINAL_YARDS[0],
+        operator_name: a.operator_name || a.custodian_name || 'Port Equipment Operator',
+        status: a.status === 'under_maintenance' || a.status === 'under-maintenance' ? 'under-maintenance' : a.status === 'dry-docking' ? 'dry-docking' : 'operational',
+        capacity: a.capacity || '60-Ton Capacity',
+        last_inspection: a.last_inspection || a.purchase_date || '2026-07-10'
       }));
 
       if (mapped.length === 0) {
@@ -51,8 +61,9 @@ const LogisticsFleet: React.FC = () => {
       } else {
         setAssets(mapped);
       }
-    } catch {
-      setError('Failed to fetch marine assets.');
+    } catch (err) {
+      console.error('API fetch error for marine assets:', err);
+      setError('Could not connect to backend server. Showing default inventory.');
     } finally {
       setLoading(false);
     }
@@ -66,27 +77,56 @@ const LogisticsFleet: React.FC = () => {
     e.preventDefault();
     setSaving(true);
     setError('');
+
+    const payload = {
+      asset_tag: form.asset_tag,
+      name: form.name,
+      category: 'Marine',
+      serial_number: form.registration_number,
+      location: form.terminal_base,
+      department_assigned: 'Logistics Operations',
+      custodian_name: form.operator_name,
+      purchase_date: form.last_inspection,
+      purchase_cost: 1500000.00,
+      current_value: 1400000.00,
+      condition: 'good',
+      status: form.status === 'under-maintenance' ? 'under_maintenance' : form.status
+    };
+
     try {
-      await api.post('/procurement/assets/', form).catch(() => {});
+      let resData: any = null;
+      try {
+        const res = await api.post('/assets/fixed-assets/', payload);
+        resData = res.data;
+      } catch {
+        const res = await api.post('/procurement/assets/', payload);
+        resData = res.data;
+      }
+
       const newA: MarineAsset = {
-        id: Date.now(),
+        id: resData?.id || Date.now(),
         ...form
       };
       setAssets([newA, ...assets]);
       setShowModal(false);
-    } catch {
-      setError('Failed to register marine asset.');
+    } catch (err: any) {
+      console.error('API asset add error:', err);
+      setError('Failed to register marine asset on backend server.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleUpdateStatus = async (id: string | number, newStatus: MarineAsset['status']) => {
+    const updated = assets.map(a => a.id === id ? { ...a, status: newStatus } : a);
+    setAssets(updated);
+
     try {
-      await api.patch(`/procurement/assets/${id}/`, { status: newStatus }).catch(() => {});
-      setAssets(assets.map(a => a.id === id ? { ...a, status: newStatus } : a));
-    } catch {
-      setError('Failed to update asset status.');
+      await api.patch(`/assets/fixed-assets/${id}/`, { status: newStatus }).catch(async () => {
+        await api.patch(`/procurement/assets/${id}/`, { status: newStatus });
+      });
+    } catch (err) {
+      console.warn('API status patch warning:', err);
     }
   };
 
@@ -215,9 +255,20 @@ const LogisticsFleet: React.FC = () => {
                     </div>
                     <div className="col-md-6">
                       <label className="form-label small fw-semibold">Terminal Base Yard</label>
-                      <select className="form-select bg-light" value={form.terminal_base} onChange={e => setForm({...form, terminal_base: e.target.value})}>
-                        {TERMINAL_YARDS.map(y => <option key={y} value={y}>{y}</option>)}
-                      </select>
+                      <input
+                        type="text"
+                        required
+                        className="form-control bg-light"
+                        list="fleet-terminal-yard-list"
+                        placeholder="Type manual yard or choose from previous entries..."
+                        value={form.terminal_base}
+                        onChange={e => setForm({...form, terminal_base: e.target.value})}
+                      />
+                      <datalist id="fleet-terminal-yard-list">
+                        {Array.from(new Set([...assets.map(a => a.terminal_base).filter(Boolean), ...TERMINAL_YARDS])).map(y => (
+                          <option key={y} value={y} />
+                        ))}
+                      </datalist>
                     </div>
                     <div className="col-md-6">
                       <label className="form-label small fw-semibold">Assigned Captain / Lead Operator</label>

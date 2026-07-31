@@ -98,20 +98,21 @@ const ContainerDetailModal: React.FC<ContainerDetailModalProps> = ({ container, 
                   <i className="fas fa-shield-alt me-1 text-primary"></i>TRA Customs Clearance Status
                 </div>
                 <div className="d-flex align-items-center gap-2">
-                  <span className={`badge ${container.customs_cleared ? 'bg-success' : 'bg-warning text-dark'} px-3 py-1.5 fw-bold`} style={{ fontSize: '0.88rem' }}>
-                    {container.customs_cleared ? 'TRA CUSTOMS CLEARED' : 'TRA HOLD / PENDING CLEARANCE'}
+                  <span className={`badge ${container.customs_cleared ? 'bg-success' : 'bg-warning text-dark'} px-3 py-2 fw-bold`} style={{ fontSize: '0.88rem' }}>
+                    {container.customs_cleared ? <><i className="fas fa-check-circle me-1.5"></i>TRA CUSTOMS CLEARED</> : <><i className="fas fa-exclamation-triangle me-1.5"></i>TRA HOLD / PENDING CLEARANCE</>}
                   </span>
                 </div>
               </div>
 
               {onToggleCustoms && (
                 <button
-                  className={`btn btn-sm text-white fw-bold px-3 py-1.5 border-0 ${container.customs_cleared ? 'bg-warning text-dark' : 'bg-success'}`}
-                  style={{ borderRadius: '8px', fontSize: '0.82rem' }}
+                  className={`btn text-white fw-bold px-3 py-2 border-0 shadow-sm ${container.customs_cleared ? 'bg-warning text-dark' : 'bg-success'}`}
+                  style={{ borderRadius: '8px', fontSize: '0.88rem' }}
                   onClick={() => onToggleCustoms(container.id, container.customs_cleared)}
+                  title="Click to change TRA customs release status"
                 >
                   <i className={`fas ${container.customs_cleared ? 'fa-pause-circle' : 'fa-check-circle'} me-1.5`}></i>
-                  {container.customs_cleared ? 'Mark Hold / Pending' : 'Approve TRA Clearance'}
+                  {container.customs_cleared ? 'Place TRA Customs Hold' : 'Approve TRA Customs Clearance'}
                 </button>
               )}
             </div>

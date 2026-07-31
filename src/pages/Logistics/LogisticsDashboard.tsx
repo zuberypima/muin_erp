@@ -38,16 +38,18 @@ const LogisticsDashboard: React.FC = () => {
     return <SkeletonDashboard />;
   }
 
-  const totalTEUs = containers.length > 0 ? containers.length * 2 : 1420;
-  const activeVessels = vessels.length > 0 ? vessels.length : 6;
-  const activeDispatches = dispatches.length > 0 ? dispatches.length : 18;
-  const customsPending = containers.filter(c => !c.customs_cleared).length || 14;
+  const totalTEUs = containers.length > 0 
+    ? containers.reduce((acc, c) => acc + (c.size_type?.includes('40ft') ? 2 : 1), 0)
+    : 1420;
+  const activeVessels = vessels.length;
+  const activeDispatches = dispatches.length;
+  const customsPending = containers.filter(c => !c.customs_cleared).length;
   const operationalFleet = assets.length > 0 ? assets.length : 12;
 
-  const mockVessels: VesselVoyage[] = vessels.length > 0 ? vessels : [
-    { id: 1, vessel_name: 'MSC Gülsün', imo_number: 'IMO 9839430', voyage_number: 'V.2026-04E', origin_port: 'Port of Singapore', destination_port: 'Port of Dar es Salaam', eta: '2026-07-25 08:00', etd: '2026-07-27 18:00', berth_no: 'Berth 04', total_teus: 2400, status: 'berthing-loading', shipping_line: 'MSC (Mediterranean Shipping Co)' },
-    { id: 2, vessel_name: 'CMA CGM Oceanus', imo_number: 'IMO 9741029', voyage_number: 'V.8802-W', origin_port: 'Dubai Jebel Ali', destination_port: 'Port of Zanzibar', eta: '2026-07-26 14:30', etd: '2026-07-28 12:00', berth_no: 'Berth 02', total_teus: 1850, status: 'at-anchor', shipping_line: 'CMA CGM' },
-    { id: 3, vessel_name: 'Maersk Mc-Kinney', imo_number: 'IMO 9632064', voyage_number: 'V.9021-S', origin_port: 'Port of Shanghai', destination_port: 'Port of Dar es Salaam', eta: '2026-07-28 06:00', etd: '2026-07-30 20:00', berth_no: 'Berth 07', total_teus: 4200, status: 'sailing', shipping_line: 'Maersk Line' },
+  const displayVessels: VesselVoyage[] = vessels.length > 0 ? vessels : [
+    { id: 1, vessel_name: 'MV Muin Horizon', imo_number: 'IMO 9468903', voyage_number: 'V.2026-73E', origin_port: 'Port of Shanghai (China)', destination_port: 'Port of Dar es Salaam', eta: '2026-07-31 10:00', etd: '2026-08-02 18:00', berth_no: 'Berth 04', total_teus: 3200, status: 'berthing-loading', shipping_line: 'Maersk Line' },
+    { id: 2, vessel_name: 'MSC Irina', imo_number: 'IMO 9929429', voyage_number: 'V.2026-04E', origin_port: 'Port of Singapore', destination_port: 'Port of Dar es Salaam', eta: '2026-08-03 08:00', etd: '2026-08-05 18:00', berth_no: 'Berth 02', total_teus: 2800, status: 'at-anchor', shipping_line: 'MSC (Mediterranean Shipping Co)' },
+    { id: 3, vessel_name: 'CMA CGM Oceanus', imo_number: 'IMO 9741029', voyage_number: 'V.8802-W', origin_port: 'Dubai Jebel Ali', destination_port: 'Port of Zanzibar', eta: '2026-08-06 14:30', etd: '2026-08-08 12:00', berth_no: 'Berth 07', total_teus: 1850, status: 'sailing', shipping_line: 'CMA CGM' },
   ];
 
   return (
@@ -135,7 +137,7 @@ const LogisticsDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockVessels.map(v => (
+                  {displayVessels.map(v => (
                     <tr key={v.id}>
                       <td>
                         <span className="fw-bold text-dark d-block">{v.vessel_name}</span>
