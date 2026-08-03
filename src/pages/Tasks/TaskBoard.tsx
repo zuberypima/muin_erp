@@ -66,6 +66,10 @@ const TaskBoard: React.FC = () => {
   };
 
   useEffect(() => {
+    fetchTasks();
+  }, [activeTab]);
+
+  useEffect(() => {
     api.get('/users/').then(r => {
       const dataArr = Array.isArray(r.data) ? r.data : (r.data?.results || []);
       setAllUsers(dataArr);
