@@ -77,7 +77,10 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, task: initial
 
   useEffect(() => {
     api.get('/users/')
-      .then(r => setAllUsers(r.data))
+      .then(r => {
+        const dataArr = Array.isArray(r.data) ? r.data : (r.data?.results || []);
+        setAllUsers(dataArr);
+      })
       .catch(() => {});
   }, []);
 

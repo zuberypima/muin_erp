@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axiosConfig';
 
 interface CreateTaskModalProps {
@@ -18,7 +19,22 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, onCreated })
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    api.get('/users/').then(r => setUsers(r.data)).catch(() => {});
+    const fetchUsers = async () => {
+      try {
+        const res = await api.get('/users/');
+        const dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+        if (dataArr.length > 0) {
+          setUsers(dataArr);
+        } else {
+          const empRes = await api.get('/hr/employees/').catch(() => ({ data: [] }));
+          const empArr = Array.isArray(empRes.data) ? empRes.data : (empRes.data?.results || []);
+          setUsers(empArr);
+        }
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+      }
+    };
+    fetchUsers();
   }, []);
 
   const toggleCollaborator = (uuid: string) => {
@@ -59,9 +75,26 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, onCreated })
 
   const availableCollaborators = users.filter(u => (u.uuid || String(u.id)) !== assignedTo);
 
-  return (
-    <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }} tabIndex={-1}>
-      <div className="modal-dialog modal-dialog-centered modal-lg">
+  return createPortal(
+    <div
+      className="modal fade show d-block"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0,0,0,0.55)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 99999
+      }}
+      tabIndex={-1}
+    >
+      <div className="modal-dialog modal-dialog-centered modal-lg w-100" style={{ maxWidth: '800px', margin: '0 1rem' }}>
         <div className="modal-content border-0 shadow" style={{ borderRadius: '16px' }}>
           <div className="modal-header border-0 pb-0">
             <h5 className="modal-title fw-bold">
@@ -94,9 +127,15 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, onCreated })
                     <label className="form-label text-muted small fw-semibold">Assign To *</label>
                     <select className="form-select bg-light" value={assignedTo} onChange={e => setAssignedTo(e.target.value)} required>
                       <option value="">Select user...</option>
-                      {users.map(u => (
-                        <option key={u.id} value={u.uuid || u.id}>{u.username}</option>
-                      ))}
+                      {users.map(u => {
+                        const name = (u.first_name || u.last_name) ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : u.username;
+                        const label = u.username && u.username !== name ? `${name} (@${u.username})` : name;
+                        return (
+                          <option key={u.id} value={u.uuid || String(u.id)}>
+                            {label}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                   <div className="mb-3">
@@ -125,6 +164,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, onCreated })
                       {availableCollaborators.map(u => {
                         const uid = u.uuid || String(u.id);
                         const checked = collaboratorIds.includes(uid);
+                        const name = (u.first_name || u.last_name) ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : u.username;
                         return (
                           <div key={u.id} className="form-check d-flex align-items-center gap-2 py-1">
                             <input
@@ -135,8 +175,8 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, onCreated })
                               onChange={() => toggleCollaborator(uid)}
                             />
                             <label className="form-check-label small" htmlFor={`collab-${u.id}`}>
-                              {u.username}
-                              <span className="text-muted ms-1" style={{ fontSize: '0.72rem' }}>{u.email}</span>
+                              {name}
+                              {u.email && <span className="text-muted ms-1" style={{ fontSize: '0.72rem' }}>({u.email})</span>}
                             </label>
                           </div>
                         );
@@ -159,7 +199,8 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, onCreated })
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

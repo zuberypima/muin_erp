@@ -52,13 +52,17 @@ const ServicePage: React.FC = () => {
     const fetchData = async () => {
       try {
         const [tasksRes, usersRes, ticketsRes] = await Promise.all([
-          api.get('/tasks/'),
-          api.get('/users/'),
+          api.get('/tasks/').catch(() => ({ data: [] })),
+          api.get('/users/').catch(() => ({ data: [] })),
           api.get('/it/tickets/').catch(() => ({ data: [] }))
         ]);
-        setTasks(tasksRes.data);
-        setUsers(usersRes.data);
-        setTickets(ticketsRes.data);
+        const tasksArr = Array.isArray(tasksRes.data) ? tasksRes.data : (tasksRes.data?.results || []);
+        const usersArr = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data?.results || []);
+        const ticketsArr = Array.isArray(ticketsRes.data) ? ticketsRes.data : (ticketsRes.data?.results || []);
+
+        setTasks(tasksArr);
+        setUsers(usersArr);
+        setTickets(ticketsArr);
       } catch (e) {
         console.error('Failed to fetch dashboard data', e);
       } finally {

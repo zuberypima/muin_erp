@@ -55,12 +55,22 @@ const TaskBoard: React.FC = () => {
       if (activeTab === 'assigned') ep = '/tasks/assigned-by-me/';
       if (activeTab === 'collaborating') ep = '/tasks/collaborating/';
       const res = await api.get(ep);
-      setTasks(res.data);
-    } catch (e) { console.error(e); } finally { setLoading(false); }
+      const dataArr = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+      setTasks(dataArr);
+    } catch (e) {
+      console.error("Error fetching tasks:", e);
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchTasks(); }, [activeTab]);
-  useEffect(() => { api.get('/users/').then(r => setAllUsers(r.data)).catch(() => {}); }, []);
+  useEffect(() => {
+    api.get('/users/').then(r => {
+      const dataArr = Array.isArray(r.data) ? r.data : (r.data?.results || []);
+      setAllUsers(dataArr);
+    }).catch(() => {});
+  }, []);
 
   const updateStatus = async (id: string, s: string) => {
     await api.patch(`/tasks/${id}/status/`, { status: s }); fetchTasks();
