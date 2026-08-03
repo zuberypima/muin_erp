@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axiosConfig';
 import {
   ITAsset, AssetCategory, AssetStatus, AssetCondition,
@@ -32,7 +33,8 @@ const ITAssets: React.FC = () => {
   const fetchAssets = async () => {
     try {
       const res = await api.get('/it/assets/');
-      setAssets(res.data);
+      const list = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+      setAssets(list);
     } catch (e) {
       console.error(e);
     } finally {
@@ -198,10 +200,26 @@ const ITAssets: React.FC = () => {
       </div>
 
       {/* Add / Edit Modal */}
-      {showModal && (
-        <div className="modal show d-block it-modal" style={{ background: 'rgba(0,0,0,0.45)' }}>
-          <div className="modal-dialog modal-lg modal-dialog-scrollable">
-            <div className="modal-content">
+      {showModal && createPortal(
+        <div
+          className="modal show d-block"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+        >
+          <div className="modal-dialog modal-lg modal-dialog-scrollable w-100" style={{ maxWidth: '750px', margin: '0 1rem' }}>
+            <div className="modal-content border-0 shadow-lg" style={{ borderRadius: '16px' }}>
               <div className="modal-header">
                 <h5 className="modal-title fw-bold">{editing ? 'Edit Asset' : 'Add New IT Asset'}</h5>
                 <button className="btn-close" onClick={closeModal}></button>
@@ -278,14 +296,31 @@ const ITAssets: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* View Detail Modal */}
-      {viewAsset && (
-        <div className="modal show d-block it-modal" style={{ background: 'rgba(0,0,0,0.45)' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
+      {viewAsset && createPortal(
+        <div
+          className="modal show d-block"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+        >
+          <div className="modal-dialog w-100" style={{ maxWidth: '600px', margin: '0 1rem' }}>
+            <div className="modal-content border-0 shadow-lg" style={{ borderRadius: '16px' }}>
               <div className="modal-header">
                 <h5 className="modal-title fw-bold">{viewAsset.name}</h5>
                 <button className="btn-close" onClick={() => setViewAsset(null)}></button>
@@ -334,7 +369,8 @@ const ITAssets: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

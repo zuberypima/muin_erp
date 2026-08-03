@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axiosConfig';
 import {
   SoftwareLicense, LicenseType, LicenseStatus,
@@ -31,7 +32,8 @@ const SoftwareLicenses: React.FC = () => {
   const fetchLicenses = async () => {
     try {
       const res = await api.get('/it/licenses/');
-      setLicenses(res.data);
+      const list = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+      setLicenses(list);
     } catch (e) {
       console.error(e);
     } finally {
@@ -251,10 +253,26 @@ const SoftwareLicenses: React.FC = () => {
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <div className="modal show d-block it-modal" style={{ background: 'rgba(0,0,0,0.45)' }}>
-          <div className="modal-dialog modal-lg modal-dialog-scrollable">
-            <div className="modal-content">
+      {showModal && createPortal(
+        <div
+          className="modal show d-block"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+        >
+          <div className="modal-dialog modal-lg modal-dialog-scrollable w-100" style={{ maxWidth: '750px', margin: '0 1rem' }}>
+            <div className="modal-content border-0 shadow-lg" style={{ borderRadius: '16px' }}>
               <div className="modal-header">
                 <h5 className="modal-title fw-bold">{editing ? 'Edit License' : 'Add Software License'}</h5>
                 <button className="btn-close" onClick={closeModal}></button>
@@ -319,7 +337,8 @@ const SoftwareLicenses: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

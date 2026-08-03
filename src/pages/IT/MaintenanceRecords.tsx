@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axiosConfig';
 import {
   MaintenanceRecord, MaintenanceType, MaintenanceStatus, ITAsset,
@@ -39,14 +40,16 @@ const MaintenanceRecords: React.FC = () => {
     const fetchData = async () => {
       try {
         const [recRes, astRes] = await Promise.all([
-          api.get('/it/maintenance/'),
-          api.get('/it/assets/')
+          api.get('/it/maintenance/').catch(() => ({ data: [] })),
+          api.get('/it/assets/').catch(() => ({ data: [] }))
         ]);
-        setRecords(recRes.data);
-        setAssets(astRes.data);
-        if (astRes.data.length > 0) {
-          emptyRecord().asset_id = astRes.data[0].id;
-          emptyRecord().asset_name = astRes.data[0].name;
+        const recList = Array.isArray(recRes.data) ? recRes.data : (recRes.data?.results || []);
+        const astList = Array.isArray(astRes.data) ? astRes.data : (astRes.data?.results || []);
+        setRecords(recList);
+        setAssets(astList);
+        if (astList.length > 0) {
+          emptyRecord().asset_id = astList[0].id;
+          emptyRecord().asset_name = astList[0].name;
         }
       } catch (e) {
         console.error(e);
@@ -192,7 +195,7 @@ const MaintenanceRecords: React.FC = () => {
                 </td></tr>
               ) : filtered.map(r => (
                 <tr key={r.id}>
-                  <td className="small text-muted font-monospace">{r.id}</td>
+                  <td className="small text-muted font-monospace">{(r as any).record_id || r.id}</td>
                   <td className="fw-medium small">{r.asset_name}</td>
                   <td>
                     <span className={`it-badge ${TYPE_COLOR[r.type]}`} style={{ background: 'transparent', border: '1.5px solid currentColor' }}>
@@ -221,10 +224,26 @@ const MaintenanceRecords: React.FC = () => {
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <div className="modal show d-block it-modal" style={{ background: 'rgba(0,0,0,0.45)' }}>
-          <div className="modal-dialog modal-lg modal-dialog-scrollable">
-            <div className="modal-content">
+      {showModal && createPortal(
+        <div
+          className="modal show d-block"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+        >
+          <div className="modal-dialog modal-lg modal-dialog-scrollable w-100" style={{ maxWidth: '720px', margin: '0 1rem' }}>
+            <div className="modal-content border-0 shadow-lg" style={{ borderRadius: '16px' }}>
               <div className="modal-header">
                 <h5 className="modal-title fw-bold">{editing ? 'Edit Maintenance Record' : 'Log Maintenance'}</h5>
                 <button className="btn-close" onClick={closeModal}></button>
@@ -283,7 +302,8 @@ const MaintenanceRecords: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

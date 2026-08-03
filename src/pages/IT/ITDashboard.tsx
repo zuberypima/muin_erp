@@ -18,17 +18,17 @@ const ITDashboard: React.FC = () => {
     const fetchDashboardData = async () => {
       try {
         const [assRes, accRes, tktsRes, licRes, mainRes] = await Promise.all([
-          api.get('/it/assets/'),
-          api.get('/it/users/'),
-          api.get('/it/tickets/'),
-          api.get('/it/licenses/'),
-          api.get('/it/maintenance/')
+          api.get('/it/assets/').catch(() => ({ data: [] })),
+          api.get('/it/users/').catch(() => ({ data: [] })),
+          api.get('/it/tickets/').catch(() => ({ data: [] })),
+          api.get('/it/licenses/').catch(() => ({ data: [] })),
+          api.get('/it/maintenance/').catch(() => ({ data: [] }))
         ]);
-        setAssets(assRes.data);
-        setAccounts(accRes.data);
-        setTickets(tktsRes.data);
-        setLicenses(licRes.data);
-        setMaintenance(mainRes.data);
+        setAssets(Array.isArray(assRes.data) ? assRes.data : (assRes.data?.results || []));
+        setAccounts(Array.isArray(accRes.data) ? accRes.data : (accRes.data?.results || []));
+        setTickets(Array.isArray(tktsRes.data) ? tktsRes.data : (tktsRes.data?.results || []));
+        setLicenses(Array.isArray(licRes.data) ? licRes.data : (licRes.data?.results || []));
+        setMaintenance(Array.isArray(mainRes.data) ? mainRes.data : (mainRes.data?.results || []));
       } catch (err) {
         console.error('Failed to load IT Dashboard data', err);
       } finally {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axiosConfig';
 import {
   SupportTicket, TicketCategory, TicketPriority, TicketStatus,
@@ -36,7 +37,8 @@ const SupportTickets: React.FC = () => {
   const fetchTickets = async () => {
     try {
       const res = await api.get('/it/tickets/');
-      setTickets(res.data);
+      const list = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+      setTickets(list);
     } catch (e) {
       console.error(e);
     } finally {
@@ -231,10 +233,26 @@ const SupportTickets: React.FC = () => {
       </div>
 
       {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="modal show d-block it-modal" style={{ background: 'rgba(0,0,0,0.45)' }}>
-          <div className="modal-dialog modal-lg modal-dialog-scrollable">
-            <div className="modal-content">
+      {showModal && createPortal(
+        <div
+          className="modal show d-block"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+        >
+          <div className="modal-dialog modal-lg modal-dialog-scrollable w-100" style={{ maxWidth: '750px', margin: '0 1rem' }}>
+            <div className="modal-content border-0 shadow-lg" style={{ borderRadius: '16px' }}>
               <div className="modal-header">
                 <h5 className="modal-title fw-bold">{editing ? 'Edit Ticket' : 'New Support Ticket'}</h5>
                 <button className="btn-close" onClick={closeModal}></button>
@@ -288,14 +306,31 @@ const SupportTickets: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* View Ticket Modal */}
-      {viewTicket && (
-        <div className="modal show d-block it-modal" style={{ background: 'rgba(0,0,0,0.45)' }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
+      {viewTicket && createPortal(
+        <div
+          className="modal show d-block"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+        >
+          <div className="modal-dialog modal-lg w-100" style={{ maxWidth: '750px', margin: '0 1rem' }}>
+            <div className="modal-content border-0 shadow-lg" style={{ borderRadius: '16px' }}>
               <div className="modal-header">
                 <div>
                   <h5 className="modal-title fw-bold mb-1">{viewTicket.title}</h5>
@@ -333,7 +368,8 @@ const SupportTickets: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
