@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axiosConfig';
 import { AssetMaintenanceLog } from './assetTypes';
 import { SkeletonTable } from '../../components/Skeleton';
@@ -39,15 +40,7 @@ const AssetMaintenance: React.FC = () => {
         notes: l.notes || ''
       }));
 
-      if (mapped.length === 0) {
-        const demo: AssetMaintenanceLog[] = [
-          { id: 1, work_order_no: 'WO-2026-8810', asset_tag: 'AST-10048', asset_name: 'Toyota Hilux 4x4 Operational Pickup', service_type: 'emergency-repair', scheduled_date: '2026-07-24', vendor_or_technician: 'Dar Auto Mechanical Garage', cost_tzs: 1850000, status: 'in-progress', notes: 'Clutch replacement and hydraulic steering fluid flush' },
-          { id: 2, work_order_no: 'WO-2026-8811', asset_tag: 'AST-10046', asset_name: 'Industrial Backup Generator 250kVA', service_type: 'routine', scheduled_date: '2026-07-15', vendor_or_technician: 'Cummins Service Tanzania', cost_tzs: 850000, status: 'completed', notes: 'Quarterly oil filter and fuel injector cleaning' },
-        ];
-        setLogs(demo);
-      } else {
-        setLogs(mapped);
-      }
+      setLogs(mapped);
     } catch {
       setError('Failed to fetch maintenance logs.');
     } finally {
@@ -138,9 +131,25 @@ const AssetMaintenance: React.FC = () => {
         )}
       </div>
 
-      {showModal && (
-        <div className="modal show d-block tab-fade" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
+      {showModal && createPortal(
+        <div
+          className="modal show d-block"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+        >
+          <div className="modal-dialog modal-lg w-100" style={{ maxWidth: '800px', margin: '0 1rem' }}>
             <div className="modal-content border-0 shadow">
               <div className="modal-header bg-primary text-white">
                 <h5 className="modal-title fw-bold">Create Maintenance Work Order</h5>
@@ -180,7 +189,8 @@ const AssetMaintenance: React.FC = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

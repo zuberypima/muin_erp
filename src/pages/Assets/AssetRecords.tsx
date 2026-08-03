@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axiosConfig';
 import { DocumentRecord } from './assetTypes';
 import { SkeletonTable } from '../../components/Skeleton';
@@ -39,15 +40,7 @@ const AssetRecords: React.FC = () => {
         status: r.status || 'active'
       }));
 
-      if (mapped.length === 0) {
-        const demo: DocumentRecord[] = [
-          { id: 1, record_code: 'REC-2026-101', title: 'Port Depot Property Title Deed & Land Survey Certificate', record_type: 'Title Deed', related_asset_tag: 'AST-10040', physical_shelf_location: 'Vault Room 01 / Safe Box A', custodian: 'Chief Legal Counsel', issue_date: '2020-05-10', expiry_date: '2050-05-10', status: 'active' },
-          { id: 2, record_code: 'REC-2026-102', title: 'Scania 15T Haulage Truck Original Logbook & Motor Insurance', record_type: 'Vehicle Logbook', related_asset_tag: 'AST-10045', physical_shelf_location: 'Archive Cabinet B / Folder 14', custodian: 'Head Records Officer', issue_date: '2024-03-15', expiry_date: '2027-03-15', status: 'active' },
-        ];
-        setRecords(demo);
-      } else {
-        setRecords(mapped);
-      }
+      setRecords(mapped);
     } catch {
       setError('Failed to fetch document records.');
     } finally {
@@ -141,9 +134,25 @@ const AssetRecords: React.FC = () => {
         )}
       </div>
 
-      {showModal && (
-        <div className="modal show d-block tab-fade" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
+      {showModal && createPortal(
+        <div
+          className="modal show d-block"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+        >
+          <div className="modal-dialog modal-lg w-100" style={{ maxWidth: '800px', margin: '0 1rem' }}>
             <div className="modal-content border-0 shadow">
               <div className="modal-header bg-primary text-white">
                 <h5 className="modal-title fw-bold">Archive Document in Physical Vault</h5>
@@ -183,7 +192,8 @@ const AssetRecords: React.FC = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

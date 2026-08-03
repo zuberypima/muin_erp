@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axiosConfig';
 import { CustodyTransfer } from './assetTypes';
 import { SkeletonTable } from '../../components/Skeleton';
@@ -41,15 +42,7 @@ const AssetTransfers: React.FC = () => {
         status: t.status || 'completed'
       }));
 
-      if (mapped.length === 0) {
-        const demo: CustodyTransfer[] = [
-          { id: 1, transfer_ref: 'TRF-9001', asset_tag: 'AST-10047', asset_name: 'High-Performance Rack Server Cluster', from_custodian: 'John Mtangi', to_custodian: 'Emanuel Peter', from_department: 'Administration', to_department: 'IT Department', transfer_date: '2026-07-22', approved_by: 'Head of Operations', status: 'completed' },
-          { id: 2, transfer_ref: 'TRF-9002', asset_tag: 'AST-10045', asset_name: 'Scania Heavy Transport Truck 15T', from_custodian: 'Logistics Fleet Yard', to_custodian: 'Rashid Bakari', from_department: 'Logistics', to_department: 'Marine Shipping Ops', transfer_date: '2026-07-24', approved_by: 'Port Superintendent', status: 'completed' },
-        ];
-        setTransfers(demo);
-      } else {
-        setTransfers(mapped);
-      }
+      setTransfers(mapped);
     } catch {
       setError('Failed to fetch custody transfers.');
     } finally {
@@ -146,9 +139,25 @@ const AssetTransfers: React.FC = () => {
         )}
       </div>
 
-      {showModal && (
-        <div className="modal show d-block tab-fade" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
+      {showModal && createPortal(
+        <div
+          className="modal show d-block"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+        >
+          <div className="modal-dialog modal-lg w-100" style={{ maxWidth: '800px', margin: '0 1rem' }}>
             <div className="modal-content border-0 shadow">
               <div className="modal-header bg-primary text-white">
                 <h5 className="modal-title fw-bold">Initiate Asset Custody Transfer</h5>
@@ -188,7 +197,8 @@ const AssetTransfers: React.FC = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

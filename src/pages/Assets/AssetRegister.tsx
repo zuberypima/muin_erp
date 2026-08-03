@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axiosConfig';
 import { FixedAsset, ASSET_CATEGORIES, LOCATIONS } from './assetTypes';
 import { SkeletonTable } from '../../components/Skeleton';
@@ -50,16 +51,7 @@ const AssetRegister: React.FC = () => {
         status: a.status || 'active'
       }));
 
-      if (mapped.length === 0) {
-        const demo: FixedAsset[] = [
-          { id: 1, asset_tag: 'AST-10045', name: 'Scania Heavy Transport Truck 15T', category: 'Vehicles & Transport', serial_number: 'SN-SC-99120', location: LOCATIONS[2], department_assigned: 'Logistics', custodian_name: 'Rashid Bakari', purchase_date: '2024-03-15', purchase_cost: 185000000, current_value: 148000000, depreciation_rate_pct: 10, condition: 'excellent', status: 'active' },
-          { id: 2, asset_tag: 'AST-10046', name: 'Industrial Backup Generator 250kVA', category: 'Machinery & Equipment', serial_number: 'GEN-250-881', location: LOCATIONS[0], department_assigned: 'Administration', custodian_name: 'John Mtangi', purchase_date: '2023-08-10', purchase_cost: 45000000, current_value: 36000000, depreciation_rate_pct: 12, condition: 'good', status: 'active' },
-          { id: 3, asset_tag: 'AST-10047', name: 'High-Performance Rack Server Cluster', category: 'IT & Electronics', serial_number: 'SRV-DL-380', location: LOCATIONS[0], department_assigned: 'IT', custodian_name: 'IT Systems Admin', purchase_date: '2025-01-20', purchase_cost: 28000000, current_value: 23800000, depreciation_rate_pct: 15, condition: 'excellent', status: 'active' },
-        ];
-        setAssets(demo);
-      } else {
-        setAssets(mapped);
-      }
+      setAssets(mapped);
     } catch {
       setError('Failed to fetch fixed assets.');
     } finally {
@@ -202,9 +194,25 @@ const AssetRegister: React.FC = () => {
         )}
       </div>
 
-      {showAddModal && (
-        <div className="modal show d-block tab-fade" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
+      {showAddModal && createPortal(
+        <div
+          className="modal show d-block"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+        >
+          <div className="modal-dialog modal-lg w-100" style={{ maxWidth: '800px', margin: '0 1rem' }}>
             <div className="modal-content border-0 shadow">
               <div className="modal-header bg-primary text-white">
                 <h5 className="modal-title fw-bold">Register Fixed Asset</h5>
@@ -260,7 +268,8 @@ const AssetRegister: React.FC = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

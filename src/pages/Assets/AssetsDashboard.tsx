@@ -6,19 +6,52 @@ import { FixedAsset } from './assetTypes';
 
 const AssetsDashboard: React.FC = () => {
   const [assets, setAssets] = useState<FixedAsset[]>([]);
+  const [docCount, setDocCount] = useState<number>(0);
+  const [maintenanceCount, setMaintenanceCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [assetsRes, docRes, maintRes] = await Promise.all([
+        api.get('/assets/fixed-assets/').catch(() => ({ data: [] })),
+        api.get('/assets/document-records/').catch(() => ({ data: [] })),
+        api.get('/assets/maintenance/').catch(() => ({ data: [] }))
+      ]);
+
+      const assetsArr = Array.isArray(assetsRes.data) ? assetsRes.data : (assetsRes.data?.results || []);
+      const mappedAssets: FixedAsset[] = assetsArr.map((a: any) => ({
+        id: a.id,
+        asset_tag: a.asset_tag,
+        name: a.name,
+        category: a.category || 'General',
+        serial_number: a.serial_number || 'N/A',
+        location: a.location || 'Default',
+        department_assigned: a.department_assigned || 'General',
+        custodian_name: a.custodian_name || 'Unassigned',
+        purchase_date: a.purchase_date || '',
+        purchase_cost: Number(a.purchase_cost) || 0,
+        current_value: Number(a.current_value) || 0,
+        depreciation_rate_pct: Number(a.depreciation_rate_pct) || 0,
+        condition: a.condition || 'good',
+        status: a.status || 'active'
+      }));
+      setAssets(mappedAssets);
+
+      const docArr = Array.isArray(docRes.data) ? docRes.data : (docRes.data?.results || []);
+      setDocCount(docArr.length);
+
+      const maintArr = Array.isArray(maintRes.data) ? maintRes.data : (maintRes.data?.results || []);
+      const pendingMaint = maintArr.filter((m: any) => m.status === 'in-progress' || m.status === 'scheduled').length;
+      setMaintenanceCount(pendingMaint);
+    } catch (err) {
+      console.error("Failed to fetch asset management data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await api.get('/procurement/assets/').catch(() => ({ data: [] }));
-        setAssets(res.data || []);
-      } catch (err) {
-        console.error("Failed to fetch asset management data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
 
@@ -26,17 +59,8 @@ const AssetsDashboard: React.FC = () => {
     return <SkeletonDashboard />;
   }
 
-  const mockAssets: FixedAsset[] = [
-    { id: 1, asset_tag: 'AST-10045', name: 'Scania Heavy Transport Truck 15T', category: 'Vehicles & Transport', serial_number: 'SN-SC-99120', location: 'Bandari Container Port Depot', department_assigned: 'Logistics', custodian_name: 'Rashid Bakari', purchase_date: '2024-03-15', purchase_cost: 185000000, current_value: 148000000, depreciation_rate_pct: 10, condition: 'excellent', status: 'active' },
-    { id: 2, asset_tag: 'AST-10046', name: 'Industrial Backup Generator 250kVA', category: 'Machinery & Equipment', serial_number: 'GEN-250-881', location: 'Head Office (Dar es Salaam)', department_assigned: 'Administration', custodian_name: 'John Mtangi', purchase_date: '2023-08-10', purchase_cost: 45000000, current_value: 36000000, depreciation_rate_pct: 12, condition: 'good', status: 'active' },
-    { id: 3, asset_tag: 'AST-10047', name: 'High-Performance Rack Server Cluster', category: 'IT & Electronics', serial_number: 'SRV-DL-380', location: 'Head Office Data Center', department_assigned: 'IT', custodian_name: 'IT Systems Admin', purchase_date: '2025-01-20', purchase_cost: 28000000, current_value: 23800000, depreciation_rate_pct: 15, condition: 'excellent', status: 'active' },
-    { id: 4, asset_tag: 'AST-10048', name: 'Toyota Hilux 4x4 Operational Pickup', category: 'Vehicles & Transport', serial_number: 'SN-TY-44120', location: 'Farm Operations Site A', department_assigned: 'Operations', custodian_name: 'Hamisi Juma', purchase_date: '2024-06-01', purchase_cost: 82000000, current_value: 69700000, depreciation_rate_pct: 10, condition: 'needs-repair', status: 'in-maintenance' },
-  ];
-
-  const displayList = assets.length > 0 ? assets : mockAssets;
-  const totalAssetsCount = displayList.length;
-  const totalNetBookValue = displayList.reduce((acc, curr) => acc + (curr.current_value || curr.purchase_cost || 0), 0);
-  const maintenanceCount = displayList.filter(a => a.status === 'in-maintenance' || a.condition === 'needs-repair').length;
+  const totalAssetsCount = assets.length;
+  const totalNetBookValue = assets.reduce((acc, curr) => acc + (curr.current_value || curr.purchase_cost || 0), 0);
 
   return (
     <div className="container-fluid p-0 fade-in">
@@ -92,7 +116,7 @@ const AssetsDashboard: React.FC = () => {
             <div className="d-flex justify-content-between align-items-center">
               <div>
                 <p className="text-muted small fw-semibold text-uppercase mb-1">Document Records</p>
-                <h3 className="fw-bold text-dark mb-0">142 <span className="fs-6 fw-normal text-muted">Records</span></h3>
+                <h3 className="fw-bold text-dark mb-0">{docCount} <span className="fs-6 fw-normal text-muted">Records</span></h3>
                 <span className="badge bg-info-subtle text-info mt-2">Deeds &amp; Logbooks</span>
               </div>
               <div className="bg-info text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style={{ width: '52px', height: '52px' }}>
@@ -170,7 +194,7 @@ const AssetsDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {displayList.map(a => (
+              {assets.map(a => (
                 <tr key={a.id}>
                   <td className="ps-3 py-3">
                     <div className="fw-bold text-dark">{a.name}</div>
