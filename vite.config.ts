@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://muinerpapi-production.up.railway.app',
+        target: 'https://muinerpapi-production-14a5.up.railway.app',
         changeOrigin: true,
         secure: false,
       },

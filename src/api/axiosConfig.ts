@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.DEV
   ? '/api/'
-  : 'https://muinerpapi-production.up.railway.app/api/';
+  : 'https://muinerpapi-production-14a5.up.railway.app/api/';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -35,7 +35,7 @@ api.interceptors.response.use(
         try {
           const refreshUrl = import.meta.env.DEV 
             ? '/api/token/refresh/' 
-            : 'https://muinerpapi-production.up.railway.app/api/token/refresh/';
+            : 'https://muinerpapi-production-14a5.up.railway.app/api/token/refresh/';
           const res = await axios.post(refreshUrl, {
             refresh: refreshToken
           });
