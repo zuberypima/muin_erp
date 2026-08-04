@@ -64,9 +64,16 @@ const SoftwareLicenses: React.FC = () => {
         const res = await api.put(`/it/licenses/${editing.id}/`, form);
         setLicenses(prev => prev.map(l => l.id === editing.id ? res.data : l));
       } else {
+        const existingNums = licenses.map(l => {
+          const m = l.id?.match(/\d+/);
+          return m ? parseInt(m[0], 10) : 0;
+        });
+        const maxNum = existingNums.length > 0 ? Math.max(...existingNums) : 0;
+        const newId = `LIC-${String(maxNum + 1).padStart(3, '0')}`;
+
         const payload = {
           ...form,
-          id: `LIC-${String(licenses.length + 1).padStart(3, '0')}`,
+          id: newId,
         };
         const res = await api.post('/it/licenses/', payload);
         setLicenses(prev => [res.data, ...prev]);

@@ -48,13 +48,34 @@ const SupportTickets: React.FC = () => {
 
   const fetchITStaff = async () => {
     try {
-      const res = await api.get('/hr/employees/');
-      const staff = res.data
-        .filter((e: any) => e.department === 'IT')
-        .map((e: any) => `${e.first_name || e.firstName} ${e.last_name || e.lastName}`);
-      
-      // If no IT staff found, provide fallback
-      setItStaffers(staff.length > 0 ? staff : ['External — TechFix Ltd']);
+      const [empRes, usrRes] = await Promise.all([
+        api.get('/hr/employees/').catch(() => ({ data: [] })),
+        api.get('/users/').catch(() => ({ data: [] }))
+      ]);
+
+      const rawEmps = Array.isArray(empRes.data) ? empRes.data : (empRes.data?.results || []);
+      const rawUsers = Array.isArray(usrRes.data) ? usrRes.data : (usrRes.data?.results || []);
+
+      const staffSet = new Set<string>();
+
+      rawUsers.forEach((u: any) => {
+        const dept = (u.department || u.profile?.department || '').trim();
+        const fullName = (u.first_name || u.last_name) ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : u.username;
+        if (dept.toLowerCase().includes('it') || u.is_staff) {
+          staffSet.add(fullName);
+        }
+      });
+
+      rawEmps.forEach((e: any) => {
+        const dept = (e.department || '').trim();
+        const fullName = `${e.first_name || ''} ${e.last_name || ''}`.trim();
+        if (fullName && dept.toLowerCase().includes('it')) {
+          staffSet.add(fullName);
+        }
+      });
+
+      const list = Array.from(staffSet);
+      setItStaffers(list.length > 0 ? list : ['External — TechFix Ltd']);
     } catch (e) {
       console.error('Failed to fetch IT staff', e);
       setItStaffers(['External — TechFix Ltd']);
@@ -86,9 +107,16 @@ const SupportTickets: React.FC = () => {
         const res = await api.put(`/it/tickets/${editing.id}/`, form);
         setTickets(prev => prev.map(t => t.id === editing.id ? res.data : t));
       } else {
+        const existingNums = tickets.map(t => {
+          const m = t.id?.match(/\d+/);
+          return m ? parseInt(m[0], 10) : 0;
+        });
+        const maxNum = existingNums.length > 0 ? Math.max(...existingNums) : 0;
+        const newId = `TKT-${String(maxNum + 1).padStart(3, '0')}`;
+
         const payload = {
           ...form,
-          id: `TKT-${String(tickets.length + 1).padStart(3, '0')}`,
+          id: newId,
         };
         const res = await api.post('/it/tickets/', payload);
         setTickets(prev => [res.data, ...prev]);

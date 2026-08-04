@@ -66,9 +66,16 @@ const ITAssets: React.FC = () => {
         const res = await api.put(`/it/assets/${editing.id}/`, form);
         setAssets(prev => prev.map(a => a.id === editing.id ? res.data : a));
       } else {
+        const existingNums = assets.map(a => {
+          const m = a.id?.match(/\d+/);
+          return m ? parseInt(m[0], 10) : 0;
+        });
+        const maxNum = existingNums.length > 0 ? Math.max(...existingNums) : 0;
+        const newId = `AST-${String(maxNum + 1).padStart(3, '0')}`;
+
         const payload = {
           ...form,
-          id: `AST-${String(assets.length + 1).padStart(3, '0')}`,
+          id: newId,
         };
         const res = await api.post('/it/assets/', payload);
         setAssets(prev => [res.data, ...prev]);

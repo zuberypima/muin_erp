@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axiosConfig';
+import { useAuth } from '../../context/AuthContext';
 import { PurchaseRequest, PRItem, PRStatus } from './procurementTypes';
 import { fmtKES } from './currencyUtils';
 
@@ -14,8 +16,10 @@ const statusBadge: Record<string, string> = {
 const emptyItem = (): PRItem => ({ name: '', qty: 1, unit: 'pcs', unit_cost: 0 });
 
 const PurchaseRequests: React.FC = () => {
+  const { user } = useAuth();
   const [prs, setPRs] = useState<PurchaseRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'my' | 'approvals' | 'all'>('my');
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterDept, setFilterDept] = useState('');
@@ -71,7 +75,10 @@ const PurchaseRequests: React.FC = () => {
       }
       setShowModal(false);
       fetchPRs();
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e);
+      alert("Failed to save purchase request. Check permissions or network.");
+    }
     finally { setSaving(false); }
   };
 
@@ -79,7 +86,10 @@ const PurchaseRequests: React.FC = () => {
     try {
       await api.post(`/procurement/purchase-requests/${id}/${action}/`);
       fetchPRs();
-    } catch (e) { console.error(e); }
+    } catch (e: any) { 
+      console.error(e); 
+      alert(e.response?.data?.detail || `Failed to ${action} request.`);
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -92,13 +102,62 @@ const PurchaseRequests: React.FC = () => {
     setItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item));
   };
 
-  const filtered = prs.filter(p =>
-    (p.title.toLowerCase().includes(search.toLowerCase()) ||
-     p.pr_number.toLowerCase().includes(search.toLowerCase()))
-  );
+  // Filter based on Tab & Search Query
+  const filtered = prs.filter(p => {
+    const isSearchMatch = (p.title.toLowerCase().includes(search.toLowerCase()) ||
+                           p.pr_number.toLowerCase().includes(search.toLowerCase()));
+    if (!isSearchMatch) return false;
+
+    const isUserOwner = p.requested_by === user?.id || (user?.username && p.requested_by_name?.toLowerCase().includes(user.username.toLowerCase()));
+
+    if (activeTab === 'my') return isUserOwner;
+    if (activeTab === 'approvals') return p.status === 'pending';
+    return true;
+  });
+
+  const pendingApprovalsCount = prs.filter(p => p.status === 'pending').length;
+  const myRequestsCount = prs.filter(p => p.requested_by === user?.id || (user?.username && p.requested_by_name?.toLowerCase().includes(user.username.toLowerCase()))).length;
 
   return (
     <div>
+      {/* Top View Selector Tabs (Segregation of Duties) */}
+      <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div className="d-flex gap-2">
+          <button
+            className={`btn btn-sm px-3 fw-bold ${activeTab === 'my' ? 'btn-success text-white shadow-sm' : 'btn-outline-secondary'}`}
+            onClick={() => setActiveTab('my')}
+            style={{ borderRadius: '8px', fontSize: '0.85rem' }}
+          >
+            <i className="fas fa-user-edit me-1.5"></i>My Requests ({myRequestsCount})
+          </button>
+
+          <button
+            className={`btn btn-sm px-3 fw-bold ${activeTab === 'approvals' ? 'btn-warning text-dark shadow-sm' : 'btn-outline-secondary'}`}
+            onClick={() => setActiveTab('approvals')}
+            style={{ borderRadius: '8px', fontSize: '0.85rem' }}
+          >
+            <i className="fas fa-gavel me-1.5"></i>Approvals Queue 
+            {pendingApprovalsCount > 0 && (
+              <span className="badge bg-danger text-white ms-1.5 rounded-pill">{pendingApprovalsCount}</span>
+            )}
+          </button>
+
+          <button
+            className={`btn btn-sm px-3 fw-bold ${activeTab === 'all' ? 'btn-primary text-white shadow-sm' : 'btn-outline-secondary'}`}
+            onClick={() => setActiveTab('all')}
+            style={{ borderRadius: '8px', fontSize: '0.85rem' }}
+          >
+            <i className="fas fa-list me-1.5"></i>All Register ({prs.length})
+          </button>
+        </div>
+
+        {activeTab === 'my' && (
+          <button className="proc-btn proc-btn-primary" onClick={openCreate}>
+            <i className="fas fa-plus me-1"></i> New Purchase Request
+          </button>
+        )}
+      </div>
+
       <div className="proc-card">
         <div className="proc-toolbar">
           <div className="proc-search">
@@ -113,9 +172,11 @@ const PurchaseRequests: React.FC = () => {
             <option value="">All Departments</option>
             {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
-          <button className="proc-btn proc-btn-primary" onClick={openCreate}>
-            <i className="fas fa-plus"></i> New Request
-          </button>
+          {activeTab !== 'my' && (
+            <button className="proc-btn proc-btn-primary" onClick={openCreate}>
+              <i className="fas fa-plus"></i> New Request
+            </button>
+          )}
         </div>
 
         <div className="proc-table-wrap">
@@ -139,58 +200,89 @@ const PurchaseRequests: React.FC = () => {
                 {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={8}>
-                      <div className="proc-empty"><i className="fas fa-file-alt"></i><p>No purchase requests found</p></div>
-                    </td>
-                  </tr>
-                ) : filtered.map(pr => (
-                  <tr key={pr.id}>
-                    <td><code style={{ fontSize: '0.75rem', color: '#0ea5e9' }}>{pr.pr_number}</code></td>
-                    <td style={{ fontWeight: 500 }}>{pr.title}</td>
-                    <td>{pr.department}</td>
-                    <td>{pr.requested_by_name ?? '—'}</td>
-                    <td>{fmtKES(pr.total_amount)}</td>
-                    <td>{pr.required_by ?? '—'}</td>
-                    <td><span className={`proc-badge ${statusBadge[pr.status]}`}>{pr.status}</span></td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.35rem' }}>
-                        {pr.status === 'draft' && (
-                          <button className="proc-btn proc-btn-ghost proc-btn-sm" title="Submit" onClick={() => handleAction(pr.id, 'submit')}>
-                            <i className="fas fa-paper-plane"></i>
-                          </button>
-                        )}
-                        {pr.status === 'pending' && (
-                          <>
-                            <button className="proc-btn proc-btn-success proc-btn-sm" onClick={() => handleAction(pr.id, 'approve')}>
-                              <i className="fas fa-check"></i>
-                            </button>
-                            <button className="proc-btn proc-btn-danger proc-btn-sm" onClick={() => handleAction(pr.id, 'reject')}>
-                              <i className="fas fa-times"></i>
-                            </button>
-                          </>
-                        )}
-                        <button className="proc-btn proc-btn-ghost proc-btn-sm" title="Preview" onClick={() => setPreviewPR(pr)}>
-                          <i className="fas fa-eye"></i>
-                        </button>
-                        <button className="proc-btn proc-btn-ghost proc-btn-sm" title="Edit" onClick={() => openEdit(pr)}>
-                          <i className="fas fa-edit"></i>
-                        </button>
-                        <button className="proc-btn proc-btn-danger proc-btn-sm" title="Delete" onClick={() => handleDelete(pr.id)}>
-                          <i className="fas fa-trash"></i>
-                        </button>
+                      <div className="proc-empty">
+                        <i className="fas fa-file-alt"></i>
+                        <p>No purchase requests found in this view.</p>
                       </div>
                     </td>
                   </tr>
-                ))}
+                ) : filtered.map(pr => {
+                  const isSelfRequest = (pr.requested_by === user?.id) || (user?.username && pr.requested_by_name?.toLowerCase().includes(user.username.toLowerCase()));
+                  const canEdit = pr.status === 'draft' || user?.is_staff;
+
+                  return (
+                    <tr key={pr.id}>
+                      <td><code style={{ fontSize: '0.75rem', color: '#0ea5e9' }}>{pr.pr_number}</code></td>
+                      <td style={{ fontWeight: 500 }}>{pr.title}</td>
+                      <td>{pr.department}</td>
+                      <td>
+                        {pr.requested_by_name ?? '—'}
+                        {isSelfRequest && (
+                          <span className="badge bg-info-subtle text-info border ms-1" style={{ fontSize: '0.68rem' }}>You</span>
+                        )}
+                      </td>
+                      <td>{fmtKES(pr.total_amount)}</td>
+                      <td>{pr.required_by ?? '—'}</td>
+                      <td><span className={`proc-badge ${statusBadge[pr.status]}`}>{pr.status}</span></td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                          {/* Submit Draft */}
+                          {pr.status === 'draft' && (
+                            <button className="proc-btn proc-btn-ghost proc-btn-sm" title="Submit Request for Approval" onClick={() => handleAction(pr.id, 'submit')}>
+                              <i className="fas fa-paper-plane text-primary"></i>
+                            </button>
+                          )}
+
+                          {/* Approval Controls */}
+                          {pr.status === 'pending' && (
+                            <>
+                              {isSelfRequest && !user?.is_staff ? (
+                                <span className="badge bg-light text-muted border py-1.5 px-2" style={{ fontSize: '0.72rem' }} title="Self-approval prohibited: Requester cannot approve their own request">
+                                  <i className="fas fa-lock me-1 text-warning"></i>Self Approval Restricted
+                                </span>
+                              ) : (
+                                <>
+                                  <button className="proc-btn proc-btn-success proc-btn-sm" title="Approve Request" onClick={() => handleAction(pr.id, 'approve')}>
+                                    <i className="fas fa-check"></i>
+                                  </button>
+                                  <button className="proc-btn proc-btn-danger proc-btn-sm" title="Reject Request" onClick={() => handleAction(pr.id, 'reject')}>
+                                    <i className="fas fa-times"></i>
+                                  </button>
+                                </>
+                              )}
+                            </>
+                          )}
+
+                          <button className="proc-btn proc-btn-ghost proc-btn-sm" title="Preview Detail" onClick={() => setPreviewPR(pr)}>
+                            <i className="fas fa-eye text-info"></i>
+                          </button>
+
+                          {canEdit && (
+                            <button className="proc-btn proc-btn-ghost proc-btn-sm" title="Edit Request" onClick={() => openEdit(pr)}>
+                              <i className="fas fa-edit text-warning"></i>
+                            </button>
+                          )}
+
+                          {pr.status === 'draft' && (
+                            <button className="proc-btn proc-btn-danger proc-btn-sm" title="Delete Draft" onClick={() => handleDelete(pr.id)}>
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
         </div>
       </div>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="proc-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="proc-modal proc-modal-lg" onClick={e => e.stopPropagation()}>
+      {/* Create / Edit Modal Portal */}
+      {showModal && createPortal(
+        <div className="proc-modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999 }} onClick={() => setShowModal(false)}>
+          <div className="proc-modal proc-modal-lg" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', width: '100%', margin: '1rem' }}>
             <div className="proc-modal-header">
               <h4>{editPR ? 'Edit Purchase Request' : 'New Purchase Request'}</h4>
               <button className="proc-modal-close" onClick={() => setShowModal(false)}><i className="fas fa-times"></i></button>
@@ -253,13 +345,14 @@ const PurchaseRequests: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Preview Modal */}
-      {previewPR && (
-        <div className="proc-modal-overlay" onClick={() => setPreviewPR(null)}>
-          <div className="proc-modal proc-modal-lg" onClick={e => e.stopPropagation()}>
+      {/* Preview Modal Portal */}
+      {previewPR && createPortal(
+        <div className="proc-modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999 }} onClick={() => setPreviewPR(null)}>
+          <div className="proc-modal proc-modal-lg" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', width: '100%', margin: '1rem' }}>
             <div className="proc-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4>Purchase Request: {previewPR.pr_number}</h4>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -331,7 +424,8 @@ const PurchaseRequests: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

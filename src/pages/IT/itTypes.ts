@@ -65,6 +65,7 @@ export type MaintenanceStatus = 'scheduled' | 'in-progress' | 'completed' | 'can
 
 export interface MaintenanceRecord {
   id: string;
+  record_id?: string;
   asset_id: string;
   asset_name: string;
   type: MaintenanceType;
