@@ -72,7 +72,8 @@ export const SHIPPING_LINES = [
   'PIL (Pacific International Lines)',
   'Evergreen Line',
   'HMM Co., Ltd.',
-  'Yang Ming Marine Transport'
+  'Yang Ming Marine Transport',
+  'Mesina'
 ];
 
 export const TERMINAL_YARDS = [

@@ -18,22 +18,22 @@ const LogisticsExports: React.FC = () => {
   const [error, setError] = useState('');
 
   const [form, setForm] = useState<Omit<ContainerItem, 'id'>>({
-    container_number: `EXPU-${Math.floor(100000 + Math.random() * 900000)}-${Math.floor(Math.random() * 9)}`,
+    container_number: '',
     size_type: '40ft HC',
-    cargo_description: 'Tanzanian Premium Arabica Coffee Beans',
+    cargo_description: '',
     shipping_line: SHIPPING_LINES[0],
-    seal_number: `SL-EX-${Math.floor(100000 + Math.random() * 900000)}`,
-    gross_weight_kg: 24800,
+    seal_number: '',
+    gross_weight_kg: 0,
     terminal_yard: TERMINAL_YARDS[0],
-    yard_slot: 'Block E1-Bay 08-L2',
+    yard_slot: '',
     status: 'in-yard',
     flow_type: 'export',
-    shipper: 'Kilimanjaro Coffee Exporters Ltd',
-    consignee: 'Hamburg Coffee Importers GmbH',
+    shipper: '',
+    consignee: '',
     origin_port: MAJOR_PORTS[0],
-    destination_port: MAJOR_PORTS[4],
+    destination_port: '',
     customs_cleared: true,
-    bill_of_lading: `BL-EXP-${Math.floor(1000 + Math.random() * 9000)}`,
+    bill_of_lading: '',
     gate_in_date: new Date().toISOString().split('T')[0]
   });
 
@@ -127,22 +127,22 @@ const LogisticsExports: React.FC = () => {
       setShowAddModal(false);
       // Reset form
       setForm({
-        container_number: `EXPU-${Math.floor(100000 + Math.random() * 900000)}-${Math.floor(Math.random() * 9)}`,
+        container_number: '',
         size_type: '40ft HC',
-        cargo_description: 'Tanzanian Premium Arabica Coffee Beans',
+        cargo_description: '',
         shipping_line: SHIPPING_LINES[0],
-        seal_number: `SL-EX-${Math.floor(100000 + Math.random() * 900000)}`,
-        gross_weight_kg: 24800,
+        seal_number: '',
+        gross_weight_kg: 0,
         terminal_yard: TERMINAL_YARDS[0],
-        yard_slot: 'Block E1-Bay 08-L2',
+        yard_slot: '',
         status: 'in-yard',
         flow_type: 'export',
-        shipper: 'Kilimanjaro Coffee Exporters Ltd',
-        consignee: 'Hamburg Coffee Importers GmbH',
+        shipper: '',
+        consignee: '',
         origin_port: MAJOR_PORTS[0],
-        destination_port: MAJOR_PORTS[4],
+        destination_port: '',
         customs_cleared: true,
-        bill_of_lading: `BL-EXP-${Math.floor(1000 + Math.random() * 9000)}`,
+        bill_of_lading: '',
         gate_in_date: new Date().toISOString().split('T')[0]
       });
     } catch (err: any) {
@@ -388,9 +388,7 @@ const LogisticsExports: React.FC = () => {
                       </div>
                       <div className="col-md-6">
                         <label className="form-label fw-bold">Destination Port (Discharge Port)</label>
-                        <select className="form-select" value={form.destination_port} onChange={e => setForm({...form, destination_port: e.target.value})}>
-                          {MAJOR_PORTS.map(p => <option key={p} value={p}>{p}</option>)}
-                        </select>
+                        <input type="text" className="form-control" required placeholder="e.g. Port of Mombasa" value={form.destination_port} onChange={e => setForm({...form, destination_port: e.target.value})} />
                       </div>
                       <div className="col-md-6">
                         <label className="form-label fw-bold">Shipping Line</label>

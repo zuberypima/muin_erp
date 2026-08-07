@@ -15,6 +15,7 @@ const GoodsReceiving: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [selectedGRN, setSelectedGRN] = useState<GoodsReceivingNote | null>(null);
+  const [previewGRN, setPreviewGRN] = useState<GoodsReceivingNote | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({ purchase_order: '', received_date: '', notes: '' });
@@ -149,6 +150,9 @@ const GoodsReceiving: React.FC = () => {
                     <td><span className={`proc-badge ${statusBadge[grn.status]}`}>{grn.status}</span></td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        <button className="proc-btn proc-btn-ghost proc-btn-sm" title="Preview GRN" onClick={() => setPreviewGRN(grn)}>
+                          <i className="fas fa-eye"></i>
+                        </button>
                         {grn.status === 'pending' && (
                           <button className="proc-btn proc-btn-success proc-btn-sm" title="Receive Goods" onClick={() => openReceive(grn)}>
                             <i className="fas fa-check"></i> Receive
@@ -263,6 +267,98 @@ const GoodsReceiving: React.FC = () => {
               <button className="proc-btn proc-btn-primary" onClick={handleReceive} disabled={saving}>
                 {saving ? <><i className="fas fa-spinner fa-spin"></i> Processing...</> : <><i className="fas fa-check"></i> Confirm Receipt</>}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview GRN Modal */}
+      {previewGRN && (
+        <div className="proc-modal-overlay d-print-none" onClick={() => setPreviewGRN(null)}>
+          <div className="proc-modal proc-modal-lg bg-white" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px' }}>
+            <div className="proc-modal-header border-bottom">
+              <h4 className="fw-bold mb-0">Goods Receiving Note Preview</h4>
+              <div>
+                <button className="proc-btn proc-btn-primary me-2" onClick={() => window.print()}>
+                  <i className="fas fa-print"></i> Print GRN
+                </button>
+                <button className="proc-modal-close border-0 bg-transparent fs-5" onClick={() => setPreviewGRN(null)}><i className="fas fa-times"></i></button>
+              </div>
+            </div>
+            <div className="proc-modal-body" id="print-area" style={{ padding: '2rem' }}>
+              <div className="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                  <h2 className="fw-bold text-dark mb-1">GOODS RECEIPT NOTE</h2>
+                  <h5 className="text-muted mb-0">{previewGRN.grn_number}</h5>
+                </div>
+                <div className="text-end">
+                  <h4 className="fw-bold text-primary mb-1">Muin ERP</h4>
+                  <p className="text-muted small mb-0">Procurement & Logistics Dept.</p>
+                </div>
+              </div>
+              
+              <div className="row mb-4">
+                <div className="col-md-6">
+                  <h6 className="fw-bold text-uppercase text-muted mb-2" style={{ fontSize: '0.8rem' }}>Supplier Details</h6>
+                  <p className="mb-1 fw-bold">{previewGRN.supplier_name || 'N/A'}</p>
+                </div>
+                <div className="col-md-6 text-md-end">
+                  <h6 className="fw-bold text-uppercase text-muted mb-2" style={{ fontSize: '0.8rem' }}>Reference Info</h6>
+                  <p className="mb-1 small"><strong>PO Number:</strong> {previewGRN.po_number || 'N/A'}</p>
+                  <p className="mb-1 small"><strong>Received Date:</strong> {previewGRN.received_date}</p>
+                  <p className="mb-0 small"><strong>Status:</strong> {previewGRN.status.toUpperCase()}</p>
+                </div>
+              </div>
+
+              <div className="table-responsive mb-4">
+                <table className="table table-bordered mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th>Item Description</th>
+                      <th className="text-center">Ordered</th>
+                      <th className="text-center">Received</th>
+                      <th className="text-center">Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {previewGRN.items.map((it, idx) => (
+                      <tr key={idx}>
+                        <td>{idx + 1}</td>
+                        <td>{it.name}</td>
+                        <td className="text-center">{it.ordered_qty}</td>
+                        <td className="text-center fw-bold">{it.received_qty}</td>
+                        <td className="text-center text-muted">{it.unit}</td>
+                      </tr>
+                    ))}
+                    {previewGRN.items.length === 0 && (
+                      <tr><td colSpan={5} className="text-center text-muted">No items found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {previewGRN.notes && (
+                <div className="mb-4">
+                  <h6 className="fw-bold text-uppercase text-muted mb-2" style={{ fontSize: '0.8rem' }}>Notes / Remarks</h6>
+                  <p className="small border p-3 bg-light rounded">{previewGRN.notes}</p>
+                </div>
+              )}
+
+              <div className="row mt-5 pt-3 border-top">
+                <div className="col-6">
+                  <h6 className="fw-bold text-uppercase text-muted mb-4" style={{ fontSize: '0.8rem' }}>Received By</h6>
+                  <div className="border-bottom w-75 mb-2"></div>
+                  <p className="small mb-0 fw-bold">{previewGRN.received_by_name || '____________________'}</p>
+                  <p className="small text-muted mb-0">Date: {previewGRN.received_date}</p>
+                </div>
+                <div className="col-6">
+                  <h6 className="fw-bold text-uppercase text-muted mb-4" style={{ fontSize: '0.8rem' }}>Inspected & Approved By</h6>
+                  <div className="border-bottom w-75 mb-2"></div>
+                  <p className="small mb-0 fw-bold">____________________</p>
+                  <p className="small text-muted mb-0">Date: ________________</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
